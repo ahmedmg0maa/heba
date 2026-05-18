@@ -1,0 +1,797 @@
+"use client"
+
+import type { FormEvent } from "react"
+import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import { BookOpen, CalendarDays, ExternalLink, LogOut, ShieldCheck, UserRound, WalletCards } from "lucide-react"
+import {
+  createUserWithEmailAndPassword,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut,
+  updateProfile,
+  type User,
+} from "firebase/auth"
+import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from "firebase/firestore"
+import { Header } from "@/components/layout/header"
+import { Footer } from "@/components/layout/footer"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { getFirebaseClientAuth, getFirebaseClientDb, hasFirebasePublicConfig } from "@/lib/firebase/client"
+
+type AccountUser = {
+  uid: string
+  name: string
+  email: string
+  phone: string
+  createdAt?: string
+}
+
+type UserOrder = {
+  id: string
+  orderNumber?: string
+  productType: "course" | "book" | string
+  productId: string
+  productTitle: string
+  amount: number
+  status: string
+  createdAt?: string
+}
+
+type UserBooking = {
+  id: string
+  customerName: string
+  email: string
+  phone: string
+  duration: number
+  amount: number
+  status: string
+  date?: string
+  time?: string
+  createdAt?: string
+}
+
+type CourseAccess = {
+  slug: string
+  accessUrl: string
+}
+
+type BookAccess = {
+  slug: string
+  fileUrl: string
+}
+
+function toISODate(value: unknown) {
+  if (!value) return ""
+  const d = new Date(String(value))
+  return Number.isNaN(d.getTime()) ? "" : d.toISOString()
+}
+
+function toNumber(value: unknown) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+function resolveAccountName(user: User, storedName?: unknown) {
+  const fromDoc = typeof storedName === "string" ? storedName.trim() : ""
+  if (fromDoc) return fromDoc
+
+  const fromAuth = typeof user.displayName === "string" ? user.displayName.trim() : ""
+  if (fromAuth) return fromAuth
+
+  const fromEmail = typeof user.email === "string" ? user.email.trim() : ""
+  if (fromEmail) return fromEmail
+
+  return user.uid
+}
+
+function bookingStatusLabel(status: string) {
+  if (status === "approved") return "تم قبول الحجز"
+  if (status === "completed") return "تمت الجلسة"
+  if (status === "cancelled") return "ملغي"
+  return "قيد المراجعة"
+}
+
+function orderStatusLabel(status: string) {
+  if (status === "paid") return "مدفوع"
+  if (status === "cancelled") return "ملغي"
+  return "قيد المراجعة"
+}
+
+function orderTypeLabel(type: string) {
+  if (type === "course") return "كورس"
+  if (type === "book") return "كتاب"
+  return "منتج"
+}
+
+function sortByCreatedAtDesc<T extends { createdAt?: string }>(items: T[]) {
+  return [...items].sort((a, b) => toISODate(b.createdAt).localeCompare(toISODate(a.createdAt)))
+}
+
+function mergeById<T extends { id: string }>(first: T[], second: T[]) {
+  const map = new Map<string, T>()
+  for (const item of [...first, ...second]) map.set(item.id, item)
+  return Array.from(map.values())
+}
+
+function mapOrdersFromSnapshot(snapshot: Awaited<ReturnType<typeof getDocs>>) {
+  return snapshot.docs.map((item) => {
+    const data = item.data() as Record<string, unknown>
+    return {
+      id: item.id,
+      orderNumber: String(data.orderNumber || ""),
+      productType: String(data.productType || ""),
+      productId: String(data.productId || ""),
+      productTitle: String(data.productTitle || ""),
+      amount: toNumber(data.amount),
+      status: String(data.status || "pending").toLowerCase(),
+      createdAt: String(data.createdAt || ""),
+    } as UserOrder
+  })
+}
+
+function mapBookingsFromSnapshot(snapshot: Awaited<ReturnType<typeof getDocs>>) {
+  return snapshot.docs.map((item) => {
+    const data = item.data() as Record<string, unknown>
+    return {
+      id: item.id,
+      customerName: String(data.customerName || ""),
+      email: String(data.email || ""),
+      phone: String(data.phone || ""),
+      duration: toNumber(data.duration) || 60,
+      amount: toNumber(data.amount),
+      status: String(data.status || "pending").toLowerCase(),
+      date: String(data.date || ""),
+      time: String(data.time || ""),
+      createdAt: String(data.createdAt || ""),
+    } as UserBooking
+  })
+}
+
+export default function AccountPage() {
+  const [authReady, setAuthReady] = useState(false)
+  const [currentUser, setCurrentUser] = useState<User | null>(null)
+  const [profile, setProfile] = useState<AccountUser | null>(null)
+  const [orders, setOrders] = useState<UserOrder[]>([])
+  const [bookings, setBookings] = useState<UserBooking[]>([])
+  const [courseAccessMap, setCourseAccessMap] = useState<Record<string, CourseAccess>>({})
+  const [bookAccessMap, setBookAccessMap] = useState<Record<string, BookAccess>>({})
+  const [loadingData, setLoadingData] = useState(false)
+  const [actionLoading, setActionLoading] = useState(false)
+  const [downloadingOrderId, setDownloadingOrderId] = useState<string | null>(null)
+  const [error, setError] = useState("")
+  const [success, setSuccess] = useState("")
+  const [configError, setConfigError] = useState("")
+  const [profilePhone, setProfilePhone] = useState("")
+
+  const [registerName, setRegisterName] = useState("")
+  const [registerEmail, setRegisterEmail] = useState("")
+  const [registerPassword, setRegisterPassword] = useState("")
+  const [registerPhone, setRegisterPhone] = useState("")
+
+  const [loginEmail, setLoginEmail] = useState("")
+  const [loginPassword, setLoginPassword] = useState("")
+
+  const paidOrders = useMemo(() => orders.filter((item) => item.status === "paid"), [orders])
+  const paidCourses = useMemo(() => paidOrders.filter((item) => item.productType === "course"), [paidOrders])
+  const paidBooks = useMemo(() => paidOrders.filter((item) => item.productType === "book"), [paidOrders])
+
+  useEffect(() => {
+    if (!hasFirebasePublicConfig()) {
+      setConfigError("خدمة الحساب غير متاحة حاليًا.")
+      setAuthReady(true)
+      return
+    }
+
+    const auth = getFirebaseClientAuth()
+    if (!auth) {
+      setConfigError("خدمة الحساب غير متاحة حاليًا.")
+      setAuthReady(true)
+      return
+    }
+
+    return onAuthStateChanged(auth, (user) => {
+      setCurrentUser(user)
+      setAuthReady(true)
+    })
+  }, [])
+
+  useEffect(() => {
+    async function loadAccountData(user: User) {
+      const db = getFirebaseClientDb()
+      if (!db) {
+        setConfigError("خدمة الحساب غير متاحة حاليًا.")
+        return
+      }
+
+      setLoadingData(true)
+      setError("")
+      try {
+        const userRef = doc(db, "users", user.uid)
+        const userSnap = await getDoc(userRef)
+
+        const baseProfile: AccountUser = {
+          uid: user.uid,
+          name: resolveAccountName(user),
+          email: user.email || "",
+          phone: "",
+          createdAt: new Date().toISOString(),
+        }
+
+        if (!userSnap.exists()) {
+          await setDoc(userRef, {
+            uid: user.uid,
+            name: baseProfile.name,
+            email: baseProfile.email,
+            phone: "",
+            createdAt: baseProfile.createdAt,
+            updatedAt: baseProfile.createdAt,
+          })
+          setProfile(baseProfile)
+          setProfilePhone("")
+        } else {
+          const data = userSnap.data() as Record<string, unknown>
+          const loaded: AccountUser = {
+            uid: user.uid,
+            name: resolveAccountName(user, data.name),
+            email: String(data.email || user.email || ""),
+            phone: String(data.phone || ""),
+            createdAt: String(data.createdAt || ""),
+          }
+          setProfile(loaded)
+          setProfilePhone(loaded.phone)
+        }
+
+        const ordersByUser = mapOrdersFromSnapshot(
+          await getDocs(query(collection(db, "orders"), where("userId", "==", user.uid))),
+        )
+        const ordersByEmail = user.email
+          ? mapOrdersFromSnapshot(await getDocs(query(collection(db, "orders"), where("email", "==", user.email))))
+          : []
+        const mergedOrders = sortByCreatedAtDesc(mergeById(ordersByUser, ordersByEmail))
+        setOrders(mergedOrders)
+
+        const bookingsByUser = mapBookingsFromSnapshot(
+          await getDocs(query(collection(db, "bookings"), where("userId", "==", user.uid))),
+        )
+        const bookingsByEmail = user.email
+          ? mapBookingsFromSnapshot(await getDocs(query(collection(db, "bookings"), where("email", "==", user.email))))
+          : []
+        const mergedBookings = sortByCreatedAtDesc(mergeById(bookingsByUser, bookingsByEmail))
+        setBookings(mergedBookings)
+
+        const paidCourseOrders = mergedOrders.filter((item) => item.status === "paid" && item.productType === "course")
+        const paidBookOrders = mergedOrders.filter((item) => item.status === "paid" && item.productType === "book")
+
+        const nextCourseMap: Record<string, CourseAccess> = {}
+        for (const order of paidCourseOrders) {
+          const productId = String(order.productId || "").trim()
+          if (!productId) continue
+          const courseSnap = await getDoc(doc(db, "courses", productId))
+          if (!courseSnap.exists()) continue
+          const data = courseSnap.data() as Record<string, unknown>
+          nextCourseMap[order.id] = {
+            slug: String(data.slug || productId),
+            accessUrl: String(data.accessUrl || ""),
+          }
+        }
+        setCourseAccessMap(nextCourseMap)
+
+        const nextBookMap: Record<string, BookAccess> = {}
+        for (const order of paidBookOrders) {
+          const productId = String(order.productId || "").trim()
+          if (!productId) continue
+          const bookSnap = await getDoc(doc(db, "books", productId))
+          if (!bookSnap.exists()) continue
+          const data = bookSnap.data() as Record<string, unknown>
+          nextBookMap[order.id] = {
+            slug: String(data.slug || productId),
+            fileUrl: String(data.fileUrl || ""),
+          }
+        }
+        setBookAccessMap(nextBookMap)
+      } catch {
+        setError("تعذر تحميل بيانات الحساب حاليًا.")
+      } finally {
+        setLoadingData(false)
+      }
+    }
+
+    if (!currentUser) {
+      setProfile(null)
+      setOrders([])
+      setBookings([])
+      setCourseAccessMap({})
+      setBookAccessMap({})
+      return
+    }
+
+    void loadAccountData(currentUser)
+  }, [currentUser])
+
+  async function handleLogin(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError("")
+    setSuccess("")
+    setActionLoading(true)
+
+    const auth = getFirebaseClientAuth()
+    if (!auth) {
+      setActionLoading(false)
+      setError("خدمة الحساب غير متاحة حاليًا.")
+      return
+    }
+
+    try {
+      await signInWithEmailAndPassword(auth, loginEmail.trim(), loginPassword)
+      setSuccess("تم تسجيل الدخول بنجاح.")
+    } catch {
+      setError("تعذر تسجيل الدخول. تأكدي من البريد وكلمة المرور.")
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  async function handleRegister(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError("")
+    setSuccess("")
+    setActionLoading(true)
+
+    const auth = getFirebaseClientAuth()
+    const db = getFirebaseClientDb()
+    if (!auth || !db) {
+      setActionLoading(false)
+      setError("خدمة الحساب غير متاحة حاليًا.")
+      return
+    }
+
+    try {
+      const name = registerName.trim()
+      if (!name) {
+        setError("يرجى إدخال الاسم الكامل.")
+        setActionLoading(false)
+        return
+      }
+
+      const credential = await createUserWithEmailAndPassword(auth, registerEmail.trim(), registerPassword)
+      await updateProfile(credential.user, { displayName: name })
+
+      const now = new Date().toISOString()
+      await setDoc(doc(db, "users", credential.user.uid), {
+        uid: credential.user.uid,
+        name,
+        email: registerEmail.trim(),
+        phone: registerPhone.trim(),
+        createdAt: now,
+        updatedAt: now,
+      })
+
+      setSuccess("تم إنشاء الحساب بنجاح.")
+      setRegisterPassword("")
+    } catch {
+      setError("تعذر إنشاء الحساب. تأكدي من صحة البيانات.")
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  async function handleLogout() {
+    setError("")
+    setSuccess("")
+    const auth = getFirebaseClientAuth()
+    if (!auth) return
+    await signOut(auth)
+  }
+
+  async function handleProfileSave(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!currentUser || !profile) return
+
+    const db = getFirebaseClientDb()
+    if (!db) {
+      setError("خدمة الحساب غير متاحة حاليًا.")
+      return
+    }
+
+    setActionLoading(true)
+    setError("")
+    setSuccess("")
+    try {
+      await updateDoc(doc(db, "users", currentUser.uid), {
+        phone: profilePhone.trim(),
+        updatedAt: new Date().toISOString(),
+      })
+      setProfile({ ...profile, phone: profilePhone.trim() })
+      setSuccess("تم تحديث بيانات الحساب بنجاح.")
+    } catch {
+      setError("تعذر تحديث بيانات الحساب.")
+    } finally {
+      setActionLoading(false)
+    }
+  }
+
+  async function handleBookDownload(orderId: string) {
+    if (!currentUser) return
+    setError("")
+
+    try {
+      setDownloadingOrderId(orderId)
+      const token = await currentUser.getIdToken()
+      globalThis.location.assign(`/api/download/${encodeURIComponent(orderId)}?token=${encodeURIComponent(token)}`)
+    } catch {
+      setError("تعذر بدء تحميل الكتاب الآن. يرجى المحاولة مرة أخرى.")
+    } finally {
+      setDownloadingOrderId(null)
+    }
+  }
+
+  if (!authReady) {
+    return (
+      <>
+        <Header />
+        <main className="pt-20 section-padding sm:pt-24" dir="rtl">
+          <div className="container-brand">
+            <div className="rounded-[2rem] border border-border bg-card p-8 text-center text-muted-foreground">جاري تحميل الحساب...</div>
+          </div>
+        </main>
+        <Footer />
+      </>
+    )
+  }
+
+  if (configError) {
+    return (
+      <>
+        <Header />
+        <main className="pt-20 section-padding sm:pt-24" dir="rtl">
+          <div className="container-brand">
+            <div className="rounded-[2rem] border border-border bg-card p-8 text-center">
+              <p className="text-lg font-bold text-foreground">{configError}</p>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </>
+    )
+  }
+
+  if (!currentUser) {
+    return (
+      <>
+        <Header />
+        <main className="pt-20 section-padding soft-gradient sm:pt-24" dir="rtl">
+          <div className="container-brand grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+            <section className="rounded-[2.2rem] border border-border bg-card p-6 shadow-xl md:p-8">
+              <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                <UserRound className="h-7 w-7" />
+              </div>
+              <h1 className="mt-5 text-4xl font-black text-foreground sm:text-5xl">حسابك الشخصي</h1>
+              <p className="mt-4 leading-8 text-muted-foreground">سجّلي الدخول لمتابعة حجوزاتك وطلباتك ومنتجاتك المفعّلة.</p>
+              <div className="mt-7 grid gap-3 sm:grid-cols-3">
+                <div className="rounded-2xl border border-border bg-background p-4 text-center">
+                  <BookOpen className="mx-auto h-6 w-6 text-accent" />
+                  <p className="mt-2 text-sm font-bold text-foreground">كورساتي</p>
+                </div>
+                <div className="rounded-2xl border border-border bg-background p-4 text-center">
+                  <CalendarDays className="mx-auto h-6 w-6 text-accent" />
+                  <p className="mt-2 text-sm font-bold text-foreground">حجوزاتي</p>
+                </div>
+                <div className="rounded-2xl border border-border bg-background p-4 text-center">
+                  <WalletCards className="mx-auto h-6 w-6 text-accent" />
+                  <p className="mt-2 text-sm font-bold text-foreground">طلباتي</p>
+                </div>
+              </div>
+            </section>
+
+            <section className="rounded-[2.2rem] border border-border bg-card p-6 shadow-xl md:p-8">
+              <Tabs defaultValue="login">
+                <TabsList className="mb-6 grid w-full grid-cols-2 rounded-full bg-muted p-1">
+                  <TabsTrigger value="login" className="rounded-full">
+                    تسجيل الدخول
+                  </TabsTrigger>
+                  <TabsTrigger value="register" className="rounded-full">
+                    إنشاء حساب
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="login">
+                  <form className="grid gap-4" onSubmit={handleLogin}>
+                    <div className="space-y-2">
+                      <Label htmlFor="login-email">البريد الإلكتروني</Label>
+                      <Input
+                        id="login-email"
+                        type="email"
+                        required
+                        value={loginEmail}
+                        onChange={(event) => setLoginEmail(event.target.value)}
+                        className="h-12 rounded-2xl bg-background"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="login-password">كلمة المرور</Label>
+                      <Input
+                        id="login-password"
+                        type="password"
+                        required
+                        value={loginPassword}
+                        onChange={(event) => setLoginPassword(event.target.value)}
+                        className="h-12 rounded-2xl bg-background"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={actionLoading}
+                      className="h-12 rounded-full bg-[var(--burgundy)] text-primary-foreground hover:bg-[var(--burgundy)]/90"
+                    >
+                      {actionLoading ? "جاري تسجيل الدخول..." : "دخول"}
+                    </Button>
+                  </form>
+                </TabsContent>
+
+                <TabsContent value="register">
+                  <form className="grid gap-4" onSubmit={handleRegister}>
+                    <div className="space-y-2">
+                      <Label htmlFor="register-name">الاسم</Label>
+                      <Input
+                        id="register-name"
+                        required
+                        value={registerName}
+                        onChange={(event) => setRegisterName(event.target.value)}
+                        className="h-12 rounded-2xl bg-background"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="register-email">البريد الإلكتروني</Label>
+                      <Input
+                        id="register-email"
+                        type="email"
+                        required
+                        value={registerEmail}
+                        onChange={(event) => setRegisterEmail(event.target.value)}
+                        className="h-12 rounded-2xl bg-background"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="register-phone">الهاتف</Label>
+                      <Input
+                        id="register-phone"
+                        value={registerPhone}
+                        onChange={(event) => setRegisterPhone(event.target.value)}
+                        className="h-12 rounded-2xl bg-background"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="register-password">كلمة المرور</Label>
+                      <Input
+                        id="register-password"
+                        type="password"
+                        required
+                        minLength={6}
+                        value={registerPassword}
+                        onChange={(event) => setRegisterPassword(event.target.value)}
+                        className="h-12 rounded-2xl bg-background"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      disabled={actionLoading}
+                      className="h-12 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      {actionLoading ? "جاري إنشاء الحساب..." : "إنشاء حساب"}
+                    </Button>
+                  </form>
+                </TabsContent>
+              </Tabs>
+
+              <div className="mt-6 rounded-2xl border border-accent/25 bg-accent/10 p-4 text-sm text-muted-foreground">
+                <ShieldCheck className="mb-2 h-5 w-5 text-accent" />
+                كل بيانات الحساب مرتبطة بطلباتك وحجوزاتك الحقيقية فقط.
+              </div>
+
+              {error ? <p className="mt-4 rounded-2xl bg-destructive/10 p-3 text-sm font-bold text-destructive">{error}</p> : null}
+              {success ? (
+                <p className="mt-4 rounded-2xl border border-accent/30 bg-accent/10 p-3 text-sm font-bold text-foreground">{success}</p>
+              ) : null}
+            </section>
+          </div>
+        </main>
+        <Footer />
+      </>
+    )
+  }
+
+  return (
+    <>
+      <Header />
+      <main className="pt-20 section-padding sm:pt-24" dir="rtl">
+        <div className="container-brand">
+          <section className="rounded-[2.2rem] border border-border bg-card p-6 shadow-xl md:p-8">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="eyebrow">حسابي</p>
+                <h1 className="mt-3 text-4xl font-black text-foreground sm:text-5xl">
+                  مرحبًا، {profile?.name || resolveAccountName(currentUser)}
+                </h1>
+                <p className="mt-3 text-muted-foreground">{profile?.email}</p>
+              </div>
+              <div className="flex gap-3">
+                <Link href="/booking">
+                  <Button className="rounded-full bg-[var(--burgundy)] text-primary-foreground hover:bg-[var(--burgundy)]/90">
+                    احجزي جلسة
+                  </Button>
+                </Link>
+                <Button variant="outline" className="rounded-full bg-transparent" onClick={handleLogout}>
+                  <LogOut className="h-4 w-4" />
+                  خروج
+                </Button>
+              </div>
+            </div>
+          </section>
+
+          {error ? <p className="mt-4 rounded-2xl bg-destructive/10 p-3 text-sm font-bold text-destructive">{error}</p> : null}
+          {success ? (
+            <p className="mt-4 rounded-2xl border border-accent/30 bg-accent/10 p-3 text-sm font-bold text-foreground">{success}</p>
+          ) : null}
+
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <p className="text-sm text-muted-foreground">حجوزاتي</p>
+              <p className="mt-2 text-3xl font-black text-foreground latin">{bookings.length}</p>
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <p className="text-sm text-muted-foreground">طلباتي</p>
+              <p className="mt-2 text-3xl font-black text-foreground latin">{orders.length}</p>
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <p className="text-sm text-muted-foreground">كورسات مفعّلة</p>
+              <p className="mt-2 text-3xl font-black text-foreground latin">{paidCourses.length}</p>
+            </div>
+            <div className="rounded-2xl border border-border bg-card p-5">
+              <p className="text-sm text-muted-foreground">كتب مفعّلة</p>
+              <p className="mt-2 text-3xl font-black text-foreground latin">{paidBooks.length}</p>
+            </div>
+          </div>
+
+          <div className="mt-8 grid gap-6 lg:grid-cols-2">
+            <section className="rounded-[2rem] border border-border bg-card p-6">
+              <h2 className="text-2xl font-black text-foreground">كورساتي</h2>
+              {loadingData ? <p className="mt-4 text-muted-foreground">جاري التحميل...</p> : null}
+              {!loadingData && paidCourses.length === 0 ? <p className="mt-4 text-muted-foreground">لا توجد كورسات مفعّلة بعد.</p> : null}
+              <div className="mt-4 grid gap-3">
+                {paidCourses.map((item) => {
+                  const access = courseAccessMap[item.id]
+                  return (
+                    <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
+                      <p className="font-bold text-foreground">{item.productTitle}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {orderStatusLabel(item.status)} · {item.amount.toLocaleString("en-US")} EGP
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <Link href={`/courses/${access?.slug || item.productId}`} className="inline-flex text-sm font-bold text-primary">
+                          عرض الكورس
+                        </Link>
+                        {access?.accessUrl ? (
+                          <a
+                            href={access.accessUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 text-sm font-bold text-primary"
+                          >
+                            الدخول للكورس
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </a>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">سيتم تفعيل رابط الدخول قريبًا.</span>
+                        )}
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            </section>
+
+            <section className="rounded-[2rem] border border-border bg-card p-6">
+              <h2 className="text-2xl font-black text-foreground">كتبي</h2>
+              {loadingData ? <p className="mt-4 text-muted-foreground">جاري التحميل...</p> : null}
+              {!loadingData && paidBooks.length === 0 ? <p className="mt-4 text-muted-foreground">لا توجد كتب مفعّلة بعد.</p> : null}
+              <div className="mt-4 grid gap-3">
+                {paidBooks.map((item) => {
+                  const access = bookAccessMap[item.id]
+                  return (
+                    <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
+                      <p className="font-bold text-foreground">{item.productTitle}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {orderStatusLabel(item.status)} · {item.amount.toLocaleString("en-US")} EGP
+                      </p>
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        <Link href={`/books/${access?.slug || item.productId}`} className="inline-flex text-sm font-bold text-primary">
+                          عرض الكتاب
+                        </Link>
+                        {access?.fileUrl ? (
+                          <button
+                            type="button"
+                            onClick={() => void handleBookDownload(item.id)}
+                            disabled={downloadingOrderId === item.id}
+                            className="inline-flex items-center gap-1 text-sm font-bold text-primary disabled:opacity-60"
+                          >
+                            {downloadingOrderId === item.id ? "جاري التحميل..." : "تحميل الكتاب"}
+                            <ExternalLink className="h-3.5 w-3.5" />
+                          </button>
+                        ) : (
+                          <span className="text-sm text-muted-foreground">الملف غير متاح بعد، تواصلي مع الدعم.</span>
+                        )}
+                      </div>
+                    </article>
+                  )
+                })}
+              </div>
+            </section>
+          </div>
+
+          <section className="mt-8 rounded-[2rem] border border-border bg-card p-6">
+            <h2 className="text-2xl font-black text-foreground">حجوزاتي</h2>
+            {loadingData ? <p className="mt-4 text-muted-foreground">جاري التحميل...</p> : null}
+            {!loadingData && bookings.length === 0 ? <p className="mt-4 text-muted-foreground">لا توجد حجوزات بعد.</p> : null}
+            <div className="mt-4 grid gap-3">
+              {bookings.map((item) => (
+                <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
+                  <p className="font-bold text-foreground">
+                    جلسة {item.duration} دقيقة · {item.amount.toLocaleString("en-US")} EGP
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {bookingStatusLabel(item.status)}
+                    {item.date ? ` · ${item.date}` : ""}
+                    {item.time ? ` · ${item.time}` : ""}
+                  </p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="mt-8 rounded-[2rem] border border-border bg-card p-6">
+            <h2 className="text-2xl font-black text-foreground">طلباتي</h2>
+            {loadingData ? <p className="mt-4 text-muted-foreground">جاري التحميل...</p> : null}
+            {!loadingData && orders.length === 0 ? <p className="mt-4 text-muted-foreground">لا توجد طلبات بعد.</p> : null}
+            <div className="mt-4 grid gap-3">
+              {orders.map((item) => (
+                <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
+                  <p className="font-bold text-foreground">{item.productTitle}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {orderTypeLabel(item.productType)} · {orderStatusLabel(item.status)}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground latin">{item.amount.toLocaleString("en-US")} EGP</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="mt-8 rounded-[2rem] border border-border bg-card p-6">
+            <h2 className="text-2xl font-black text-foreground">بياناتي</h2>
+            <form className="mt-4 grid gap-4 sm:max-w-md" onSubmit={handleProfileSave}>
+              <div className="space-y-2">
+                <Label htmlFor="account-email">البريد الإلكتروني</Label>
+                <Input id="account-email" value={profile?.email || ""} disabled className="h-11 rounded-xl bg-background" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="account-phone">الهاتف</Label>
+                <Input
+                  id="account-phone"
+                  value={profilePhone}
+                  onChange={(event) => setProfilePhone(event.target.value)}
+                  className="h-11 rounded-xl bg-background"
+                />
+              </div>
+              <Button type="submit" disabled={actionLoading} className="h-11 rounded-full bg-primary text-primary-foreground">
+                {actionLoading ? "جاري الحفظ..." : "حفظ البيانات"}
+              </Button>
+            </form>
+          </section>
+        </div>
+      </main>
+      <Footer />
+    </>
+  )
+}

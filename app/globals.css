@@ -1,0 +1,408 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  /*
+    Brand distribution:
+    Cream 55%  | #F5F0E7
+    Petrol 25% | #2F6173
+    Olive 12%  | #6B724E
+    Gold 5%    | #B79B60
+    Burgundy 3%| #7A2433
+  */
+  --cream: #f5f0e7;
+  --sand: #e4d7c7;
+  --teal: #2f6173;
+  --gold: #b79b60;
+  --olive: #6b724e;
+  --burgundy: #7a2433;
+  --ink: #17323c;
+
+  --background: #f5f0e7;
+  --foreground: #17323c;
+
+  --card: #fffaf3;
+  --card-foreground: #17323c;
+
+  --popover: #fffaf3;
+  --popover-foreground: #17323c;
+
+  --primary: #2f6173;
+  --primary-foreground: #fffaf3;
+
+  --secondary: #e4d7c7;
+  --secondary-foreground: #17323c;
+
+  --muted: #eadfce;
+  --muted-foreground: #5d6c6f;
+
+  --accent: #b79b60;
+  --accent-foreground: #17323c;
+
+  --destructive: #7a2433;
+  --destructive-foreground: #fffaf3;
+
+  --border: rgba(47, 97, 115, 0.16);
+  --input: rgba(47, 97, 115, 0.18);
+  --ring: #b79b60;
+
+  --chart-1: #2f6173;
+  --chart-2: #6b724e;
+  --chart-3: #b79b60;
+  --chart-4: #7a2433;
+  --chart-5: #e4d7c7;
+
+  --radius: 1rem;
+
+  --sidebar: #fffaf3;
+  --sidebar-foreground: #17323c;
+  --sidebar-primary: #2f6173;
+  --sidebar-primary-foreground: #fffaf3;
+  --sidebar-accent: #e4d7c7;
+  --sidebar-accent-foreground: #17323c;
+  --sidebar-border: rgba(47, 97, 115, 0.16);
+  --sidebar-ring: #b79b60;
+}
+
+.dark {
+  /*
+    نفس ألوان البراند، بتوزيع أهدأ.
+    ممنوع تحويل الدارك إلى شاشة بترولية كاملة.
+  */
+  --cream: #f5f0e7;
+  --sand: #e4d7c7;
+  --teal: #2f6173;
+  --gold: #b79b60;
+  --olive: #6b724e;
+  --burgundy: #7a2433;
+  --ink: #f5f0e7;
+
+  --background: #162f36;
+  --foreground: #f5f0e7;
+
+  --card: rgba(245, 240, 231, 0.085);
+  --card-foreground: #f5f0e7;
+
+  --popover: #1c3b44;
+  --popover-foreground: #f5f0e7;
+
+  --primary: #2f6173;
+  --primary-foreground: #fffaf3;
+
+  --secondary: rgba(228, 215, 199, 0.12);
+  --secondary-foreground: #e4d7c7;
+
+  --muted: rgba(245, 240, 231, 0.10);
+  --muted-foreground: #d3c7b5;
+
+  --accent: #b79b60;
+  --accent-foreground: #17323c;
+
+  --destructive: #7a2433;
+  --destructive-foreground: #fffaf3;
+
+  --border: rgba(245, 240, 231, 0.16);
+  --input: rgba(245, 240, 231, 0.20);
+  --ring: #b79b60;
+
+  --chart-1: #2f6173;
+  --chart-2: #6b724e;
+  --chart-3: #b79b60;
+  --chart-4: #7a2433;
+  --chart-5: #e4d7c7;
+
+  --sidebar: #1c3b44;
+  --sidebar-foreground: #f5f0e7;
+  --sidebar-primary: #2f6173;
+  --sidebar-primary-foreground: #fffaf3;
+  --sidebar-accent: rgba(245, 240, 231, 0.10);
+  --sidebar-accent-foreground: #e4d7c7;
+  --sidebar-border: rgba(245, 240, 231, 0.16);
+  --sidebar-ring: #b79b60;
+}
+
+@theme inline {
+  --font-sans: "Noto Sans Arabic", "Segoe UI", Tahoma, system-ui, sans-serif;
+  --font-serif: "Amiri", "Times New Roman", Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 6px);
+  --radius-md: calc(var(--radius) - 3px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 8px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    min-height: 100vh;
+    overflow-x: hidden;
+    line-height: 1.6;
+    background-color: var(--background);
+    background-image:
+      radial-gradient(circle at 88% 12%, color-mix(in oklab, var(--teal) 10%, transparent) 0, transparent 30rem),
+      radial-gradient(circle at 8% 18%, color-mix(in oklab, var(--gold) 12%, transparent) 0, transparent 28rem),
+      radial-gradient(circle at 52% 105%, color-mix(in oklab, var(--olive) 8%, transparent) 0, transparent 28rem),
+      linear-gradient(180deg, var(--background), var(--background));
+  }
+
+  .dark body {
+    background-color: var(--background);
+    background-image:
+      radial-gradient(circle at 88% 12%, color-mix(in oklab, var(--cream) 5%, transparent) 0, transparent 28rem),
+      radial-gradient(circle at 10% 18%, color-mix(in oklab, var(--gold) 8%, transparent) 0, transparent 26rem),
+      radial-gradient(circle at 54% 110%, color-mix(in oklab, var(--olive) 9%, transparent) 0, transparent 30rem),
+      linear-gradient(180deg, var(--background), #18353d);
+  }
+
+  a,
+  button {
+    transition:
+      color 180ms ease,
+      background-color 180ms ease,
+      border-color 180ms ease,
+      transform 220ms ease,
+      box-shadow 220ms ease;
+  }
+
+  :focus-visible {
+    outline: 2px solid color-mix(in oklab, var(--accent) 70%, white);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--gold) 42%, transparent);
+    color: var(--foreground);
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  .container-brand {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+
+  .section-padding {
+    @apply py-20 sm:py-24 lg:py-28;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 760px;
+  }
+
+  .brand-card {
+    @apply rounded-[2rem] border border-border bg-card/85 shadow-[0_16px_45px_rgba(23,50,60,0.08)] backdrop-blur-md;
+  }
+
+  .dark .brand-card {
+    background: rgba(245, 240, 231, 0.075);
+    box-shadow: 0 18px 52px rgb(7 16 19 / 22%);
+  }
+
+  .brand-kicker,
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.32em] text-accent;
+  }
+
+  .brand-title {
+    @apply text-3xl font-bold leading-tight text-foreground sm:text-4xl lg:text-6xl;
+  }
+
+  .brand-text {
+    @apply text-base leading-8 text-muted-foreground sm:text-lg;
+  }
+
+  .latin {
+    font-family: "Amiri", "Times New Roman", Georgia, serif;
+    letter-spacing: 0.02em;
+  }
+
+  .brand-gradient {
+    background:
+      radial-gradient(circle at 18% 20%, color-mix(in oklab, var(--gold) 14%, transparent), transparent 30rem),
+      radial-gradient(circle at 86% 34%, color-mix(in oklab, var(--teal) 12%, transparent), transparent 32rem),
+      linear-gradient(135deg, color-mix(in oklab, var(--card) 92%, transparent), color-mix(in oklab, var(--secondary) 28%, transparent));
+  }
+
+  .soft-gradient,
+  .luxury-gradient {
+    background:
+      radial-gradient(circle at 88% 12%, color-mix(in oklab, var(--teal) 10%, transparent) 0, transparent 31rem),
+      radial-gradient(circle at 7% 18%, color-mix(in oklab, var(--gold) 12%, transparent) 0, transparent 28rem),
+      radial-gradient(circle at 50% 100%, color-mix(in oklab, var(--olive) 8%, transparent) 0, transparent 26rem),
+      linear-gradient(135deg, color-mix(in oklab, var(--background) 92%, white), color-mix(in oklab, var(--secondary) 26%, transparent));
+  }
+
+  .dark .soft-gradient,
+  .dark .luxury-gradient {
+    background:
+      radial-gradient(circle at 88% 12%, color-mix(in oklab, var(--cream) 5%, transparent) 0, transparent 28rem),
+      radial-gradient(circle at 8% 20%, color-mix(in oklab, var(--gold) 8%, transparent) 0, transparent 26rem),
+      radial-gradient(circle at 50% 110%, color-mix(in oklab, var(--olive) 7%, transparent) 0, transparent 30rem),
+      linear-gradient(135deg, color-mix(in oklab, var(--background) 94%, var(--cream)), color-mix(in oklab, var(--background) 88%, var(--teal)));
+  }
+
+  .luxury-divider {
+    @apply relative mx-auto h-px w-40 bg-accent/55;
+  }
+
+  .luxury-divider::before,
+  .luxury-divider::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    width: 0.55rem;
+    height: 0.55rem;
+    transform: translateY(-50%) rotate(45deg);
+    background: var(--accent);
+  }
+
+  .luxury-divider::before {
+    right: -1rem;
+  }
+
+  .luxury-divider::after {
+    left: -1rem;
+  }
+
+  .fast-card {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  .float-soft {
+    animation: float-soft 7s ease-in-out infinite;
+  }
+
+  .fade-in-up {
+    animation: fade-in-up 560ms ease both;
+  }
+
+  .shine-border {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .shine-border::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    border-radius: inherit;
+    padding: 1px;
+    background:
+      linear-gradient(
+        135deg,
+        color-mix(in oklab, var(--accent) 56%, transparent),
+        transparent,
+        color-mix(in oklab, var(--primary) 34%, transparent)
+      );
+    pointer-events: none;
+    mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    mask-composite: exclude;
+  }
+
+  .brand-primary-button {
+    @apply bg-primary text-primary-foreground shadow-[0_14px_36px_rgba(47,97,115,0.18)] hover:bg-primary/90;
+  }
+
+  .brand-focus-button {
+    background: var(--burgundy);
+    color: #fffaf3;
+    box-shadow: 0 14px 36px rgba(122, 36, 51, 0.16);
+  }
+
+  .brand-focus-button:hover {
+    background: color-mix(in oklab, var(--burgundy) 92%, black);
+  }
+
+  .brand-soft-surface {
+    background: rgba(255, 250, 243, 0.70);
+    border-color: rgba(47, 97, 115, 0.14);
+  }
+
+  .dark .brand-soft-surface {
+    background: rgba(245, 240, 231, 0.075);
+    border-color: rgba(245, 240, 231, 0.14);
+  }
+}
+
+@keyframes float-soft {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+
+  50% {
+    transform: translate3d(0, -10px, 0);
+  }
+}
+
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
