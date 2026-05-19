@@ -1,7 +1,8 @@
+import "server-only"
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto"
+import { ADMIN_SESSION_COOKIE, ADMIN_SESSION_MAX_AGE_SECONDS } from "@/lib/admin-session"
 
-export const ADMIN_SESSION_COOKIE = "admin-auth"
-export const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 12
+export { ADMIN_SESSION_COOKIE, ADMIN_SESSION_MAX_AGE_SECONDS }
 
 type SessionPayload = {
   iat: number
