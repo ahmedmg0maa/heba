@@ -83,11 +83,15 @@ export async function POST(request: Request) {
   }
 
   const cookieStore = await cookies()
+  cookieStore.delete({
+    name: ADMIN_SESSION_COOKIE,
+    path: "/admin",
+  })
   cookieStore.set(ADMIN_SESSION_COOKIE, sessionToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "strict",
-    path: "/admin",
+    path: "/",
     maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
   })
 

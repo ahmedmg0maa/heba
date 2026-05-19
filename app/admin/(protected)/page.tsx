@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { BookOpen, Calendar, Layers3, MessageSquare, ShoppingCart, TrendingUp } from "lucide-react"
+import { BookOpen, Calendar, Eye, Layers3, MessageSquare, ShoppingCart, TrendingUp } from "lucide-react"
 import { listDocuments } from "@/lib/firebase/admin"
 import { Button } from "@/components/ui/button"
 
@@ -33,6 +33,16 @@ export default async function AdminDashboardPage() {
       <div className="rounded-[2rem] bg-primary p-6 text-primary-foreground shadow-xl">
         <h1 className="text-3xl font-black">لوحة إدارة المنصة</h1>
         <p className="mt-2 text-primary-foreground/75">إحصاءات حيّة للحجوزات والطلبات والرسائل والمنتجات.</p>
+        <div className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-2xl font-black">سجل الوصول</h2>
+          <p className="mt-2 text-sm text-muted-foreground">مراجعة الوصول للمحتوى المدفوع والأنشطة المشبوهة.</p>
+          <Link href="/admin/access" className="mt-5 inline-flex">
+            <Button className="rounded-full">
+              <Eye className="h-4 w-4" />
+              فتح السجل
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">

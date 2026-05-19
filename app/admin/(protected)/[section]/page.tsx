@@ -22,6 +22,11 @@ const sectionLinks: Record<string, { title: string; href: string; description: s
     href: "/admin/books",
     description: "إدارة الكتب وروابط الملفات.",
   },
+  access: {
+    title: "سجل الوصول",
+    href: "/admin/access",
+    description: "مراجعة وصول المحتوى المحمي واكتشاف الأنشطة المشبوهة.",
+  },
   messages: {
     title: "الرسائل",
     href: "/admin/messages",

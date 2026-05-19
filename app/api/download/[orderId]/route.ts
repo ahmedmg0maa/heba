@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { getDocument, getFirebaseSetupErrorMessage, isFirebaseConfigured, verifyFirebaseIdToken } from "@/lib/firebase/admin"
+import { getDocument, getFirebaseSetupErrorMessage, isFirebaseConfigured } from "@/lib/firebase/admin"
+import { resolveProtectedContentAccess } from "@/lib/protected-content"
 
 type RouteContext = {
   params: Promise<{ orderId: string }>
@@ -33,18 +34,11 @@ function extractToken(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest, context: RouteContext) {
-  if (!isFirebaseConfigured()) {
-    return firebaseConfigResponse()
-  }
+  if (!isFirebaseConfigured()) return firebaseConfigResponse()
 
   const token = extractToken(request)
   if (!token) {
     return NextResponse.json({ ok: false, message: "يجب تسجيل الدخول أولًا." }, { status: 401 })
-  }
-
-  const authResult = await verifyFirebaseIdToken(token)
-  if (!authResult.ok) {
-    return NextResponse.json({ ok: false, message: "جلسة المستخدم غير صالحة." }, { status: 401 })
   }
 
   const { orderId } = await context.params
@@ -58,20 +52,6 @@ export async function GET(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ ok: false, message: "الطلب غير موجود." }, { status: 404 })
   }
 
-  const userId = text(authResult.decoded.uid)
-  const userEmail = text(authResult.decoded.email || "")
-  const orderUserId = text(order.userId)
-  const orderEmail = text(order.email).toLowerCase()
-  const isOwner = (orderUserId && orderUserId === userId) || (userEmail && orderEmail && orderEmail === userEmail.toLowerCase())
-
-  if (!isOwner) {
-    return NextResponse.json({ ok: false, message: "غير مصرح بتنزيل هذا الملف." }, { status: 403 })
-  }
-
-  if (text(order.status).toLowerCase() !== "paid") {
-    return NextResponse.json({ ok: false, message: "التحميل متاح فقط بعد تأكيد الدفع." }, { status: 403 })
-  }
-
   if (text(order.productType).toLowerCase() !== "book") {
     return NextResponse.json({ ok: false, message: "هذا الطلب ليس كتابًا قابلًا للتحميل." }, { status: 400 })
   }
@@ -81,11 +61,18 @@ export async function GET(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ ok: false, message: "بيانات المنتج غير مكتملة." }, { status: 400 })
   }
 
-  const book = await getDocument("books", productId)
-  const fileUrl = text(book?.fileUrl)
-  if (!fileUrl) {
-    return NextResponse.json({ ok: false, message: "الملف غير متاح بعد. تواصلي مع فريق الدعم." }, { status: 404 })
+  const resolved = await resolveProtectedContentAccess({
+    request,
+    idToken: token,
+    productId,
+    productType: "book",
+    mode: "download",
+  })
+
+  if (!resolved.ok) {
+    return NextResponse.json({ ok: false, message: resolved.message }, { status: resolved.status })
   }
 
-  return NextResponse.redirect(fileUrl, { status: 302 })
+  return NextResponse.redirect(resolved.signedUrl, { status: 302 })
 }
+

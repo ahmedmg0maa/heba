@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { ADMIN_SESSION_COOKIE, isValidAdminSessionToken } from "@/lib/admin-auth"
 import { deleteDocument, getFirebaseAdminErrorMessage, setDocument } from "@/lib/firebase/admin"
+import { requireAdmin } from "@/lib/require-admin"
 
 type RouteContext = { params: Promise<{ id: string }> }
 export const runtime = "nodejs"
@@ -21,13 +20,8 @@ function asStatus(value: unknown): "active" | "draft" | "hidden" {
   return "active"
 }
 
-async function isAdmin() {
-  const token = (await cookies()).get(ADMIN_SESSION_COOKIE)?.value
-  return isValidAdminSessionToken(token)
-}
-
 export async function PATCH(request: Request, context: RouteContext) {
-  if (!(await isAdmin())) {
+  if (!(await requireAdmin())) {
     return NextResponse.json({ ok: false, message: "غير مصرح." }, { status: 401 })
   }
 
@@ -69,7 +63,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
-  if (!(await isAdmin())) {
+  if (!(await requireAdmin())) {
     return NextResponse.json({ ok: false, message: "غير مصرح." }, { status: 401 })
   }
 

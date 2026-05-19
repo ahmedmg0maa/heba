@@ -9,6 +9,7 @@ import { ArrowRight, CreditCard, LockKeyhole, ShieldCheck, Sparkles } from "luci
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -38,6 +39,7 @@ export default function CheckoutPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [productsLoading, setProductsLoading] = useState(true)
   const [productKey, setProductKey] = useState("")
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
 
   const selectedProduct = useMemo(
     () => products.find((product) => makeKey(product) === productKey) ?? products[0],

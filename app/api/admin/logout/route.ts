@@ -8,6 +8,10 @@ export async function POST() {
   const cookieStore = await cookies()
   cookieStore.delete({
     name: ADMIN_SESSION_COOKIE,
+    path: "/",
+  })
+  cookieStore.delete({
+    name: ADMIN_SESSION_COOKIE,
     path: "/admin",
   })
 

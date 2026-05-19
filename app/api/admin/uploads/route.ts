@@ -1,9 +1,8 @@
 import { randomUUID } from "node:crypto"
 import { extname } from "node:path"
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { ADMIN_SESSION_COOKIE, isValidAdminSessionToken } from "@/lib/admin-auth"
 import { getFirebaseStorageBucket, isFirebaseConfigured } from "@/lib/firebase/admin"
+import { requireAdmin } from "@/lib/require-admin"
 
 export const runtime = "nodejs"
 
@@ -29,13 +28,8 @@ function extensionFrom(file: File) {
   return "bin"
 }
 
-async function isAdmin() {
-  const token = (await cookies()).get(ADMIN_SESSION_COOKIE)?.value
-  return isValidAdminSessionToken(token)
-}
-
 export async function POST(request: Request) {
-  if (!(await isAdmin())) {
+  if (!(await requireAdmin())) {
     return NextResponse.json({ ok: false, message: "غير مصرح." }, { status: 401 })
   }
 

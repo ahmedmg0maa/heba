@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { ADMIN_SESSION_COOKIE, isValidAdminSessionToken } from "@/lib/admin-auth"
+import { requireAdmin } from "@/lib/require-admin"
 import { getDocument, getFirebaseAdminErrorMessage, listDocuments, setDocument } from "@/lib/firebase/admin"
 
 export const runtime = "nodejs"
@@ -29,13 +28,8 @@ function toSlug(value: string) {
     .replace(/-+/g, "-")
 }
 
-async function isAdmin() {
-  const token = (await cookies()).get(ADMIN_SESSION_COOKIE)?.value
-  return isValidAdminSessionToken(token)
-}
-
 export async function GET() {
-  if (!(await isAdmin())) {
+  if (!(await requireAdmin())) {
     return NextResponse.json({ ok: false, message: "غير مصرح." }, { status: 401 })
   }
 
@@ -48,7 +42,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  if (!(await isAdmin())) {
+  if (!(await requireAdmin())) {
     return NextResponse.json({ ok: false, message: "غير مصرح." }, { status: 401 })
   }
 

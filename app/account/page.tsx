@@ -53,18 +53,12 @@ type UserBooking = {
   createdAt?: string
 }
 
-type CourseAccess = {
-  slug: string
-  accessUrl: string
-}
-
-type BookAccess = {
-  slug: string
-  fileUrl: string
-}
-
 function toISODate(value: unknown) {
   if (!value) return ""
+  if (typeof value === "object" && value !== null && "toDate" in value && typeof value.toDate === "function") {
+    const date = value.toDate() as Date
+    return Number.isNaN(date.getTime()) ? "" : date.toISOString()
+  }
   const d = new Date(String(value))
   return Number.isNaN(d.getTime()) ? "" : d.toISOString()
 }
@@ -127,7 +121,7 @@ function mapOrdersFromSnapshot(snapshot: Awaited<ReturnType<typeof getDocs>>) {
       productTitle: String(data.productTitle || ""),
       amount: toNumber(data.amount),
       status: String(data.status || "pending").toLowerCase(),
-      createdAt: String(data.createdAt || ""),
+      createdAt: toISODate(data.createdAt),
     } as UserOrder
   })
 }
@@ -145,7 +139,7 @@ function mapBookingsFromSnapshot(snapshot: Awaited<ReturnType<typeof getDocs>>) 
       status: String(data.status || "pending").toLowerCase(),
       date: String(data.date || ""),
       time: String(data.time || ""),
-      createdAt: String(data.createdAt || ""),
+      createdAt: toISODate(data.createdAt),
     } as UserBooking
   })
 }
@@ -156,14 +150,11 @@ export default function AccountPage() {
   const [profile, setProfile] = useState<AccountUser | null>(null)
   const [orders, setOrders] = useState<UserOrder[]>([])
   const [bookings, setBookings] = useState<UserBooking[]>([])
-  const [courseAccessMap, setCourseAccessMap] = useState<Record<string, CourseAccess>>({})
-  const [bookAccessMap, setBookAccessMap] = useState<Record<string, BookAccess>>({})
   const [loadingData, setLoadingData] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [downloadingOrderId, setDownloadingOrderId] = useState<string | null>(null)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
-  const [configError, setConfigError] = useState("")
   const [profilePhone, setProfilePhone] = useState("")
 
   const [registerName, setRegisterName] = useState("")
@@ -180,14 +171,12 @@ export default function AccountPage() {
 
   useEffect(() => {
     if (!hasFirebasePublicConfig()) {
-      setConfigError("خدمة الحساب غير متاحة حاليًا.")
       setAuthReady(true)
       return
     }
 
     const auth = getFirebaseClientAuth()
     if (!auth) {
-      setConfigError("خدمة الحساب غير متاحة حاليًا.")
       setAuthReady(true)
       return
     }
@@ -202,7 +191,9 @@ export default function AccountPage() {
     async function loadAccountData(user: User) {
       const db = getFirebaseClientDb()
       if (!db) {
-        setConfigError("خدمة الحساب غير متاحة حاليًا.")
+        setProfile(null)
+        setOrders([])
+        setBookings([])
         return
       }
 
@@ -238,60 +229,37 @@ export default function AccountPage() {
             name: resolveAccountName(user, data.name),
             email: String(data.email || user.email || ""),
             phone: String(data.phone || ""),
-            createdAt: String(data.createdAt || ""),
+            createdAt: toISODate(data.createdAt),
           }
           setProfile(loaded)
           setProfilePhone(loaded.phone)
         }
 
-        const ordersByUser = mapOrdersFromSnapshot(
-          await getDocs(query(collection(db, "orders"), where("userId", "==", user.uid))),
-        )
-        const ordersByEmail = user.email
-          ? mapOrdersFromSnapshot(await getDocs(query(collection(db, "orders"), where("email", "==", user.email))))
-          : []
+        const [ordersByUserResult, ordersByEmailResult, bookingsByUserResult, bookingsByEmailResult] = await Promise.allSettled([
+          getDocs(query(collection(db, "orders"), where("userId", "==", user.uid))),
+          user.email ? getDocs(query(collection(db, "orders"), where("email", "==", user.email))) : Promise.resolve(null),
+          getDocs(query(collection(db, "bookings"), where("userId", "==", user.uid))),
+          user.email ? getDocs(query(collection(db, "bookings"), where("email", "==", user.email))) : Promise.resolve(null),
+        ])
+
+        const ordersByUser =
+          ordersByUserResult.status === "fulfilled" ? mapOrdersFromSnapshot(ordersByUserResult.value) : []
+        const ordersByEmail =
+          ordersByEmailResult.status === "fulfilled" && ordersByEmailResult.value
+            ? mapOrdersFromSnapshot(ordersByEmailResult.value)
+            : []
         const mergedOrders = sortByCreatedAtDesc(mergeById(ordersByUser, ordersByEmail))
         setOrders(mergedOrders)
 
-        const bookingsByUser = mapBookingsFromSnapshot(
-          await getDocs(query(collection(db, "bookings"), where("userId", "==", user.uid))),
-        )
-        const bookingsByEmail = user.email
-          ? mapBookingsFromSnapshot(await getDocs(query(collection(db, "bookings"), where("email", "==", user.email))))
-          : []
+        const bookingsByUser =
+          bookingsByUserResult.status === "fulfilled" ? mapBookingsFromSnapshot(bookingsByUserResult.value) : []
+        const bookingsByEmail =
+          bookingsByEmailResult.status === "fulfilled" && bookingsByEmailResult.value
+            ? mapBookingsFromSnapshot(bookingsByEmailResult.value)
+            : []
         const mergedBookings = sortByCreatedAtDesc(mergeById(bookingsByUser, bookingsByEmail))
         setBookings(mergedBookings)
 
-        const paidCourseOrders = mergedOrders.filter((item) => item.status === "paid" && item.productType === "course")
-        const paidBookOrders = mergedOrders.filter((item) => item.status === "paid" && item.productType === "book")
-
-        const nextCourseMap: Record<string, CourseAccess> = {}
-        for (const order of paidCourseOrders) {
-          const productId = String(order.productId || "").trim()
-          if (!productId) continue
-          const courseSnap = await getDoc(doc(db, "courses", productId))
-          if (!courseSnap.exists()) continue
-          const data = courseSnap.data() as Record<string, unknown>
-          nextCourseMap[order.id] = {
-            slug: String(data.slug || productId),
-            accessUrl: String(data.accessUrl || ""),
-          }
-        }
-        setCourseAccessMap(nextCourseMap)
-
-        const nextBookMap: Record<string, BookAccess> = {}
-        for (const order of paidBookOrders) {
-          const productId = String(order.productId || "").trim()
-          if (!productId) continue
-          const bookSnap = await getDoc(doc(db, "books", productId))
-          if (!bookSnap.exists()) continue
-          const data = bookSnap.data() as Record<string, unknown>
-          nextBookMap[order.id] = {
-            slug: String(data.slug || productId),
-            fileUrl: String(data.fileUrl || ""),
-          }
-        }
-        setBookAccessMap(nextBookMap)
       } catch {
         setError("تعذر تحميل بيانات الحساب حاليًا.")
       } finally {
@@ -303,8 +271,6 @@ export default function AccountPage() {
       setProfile(null)
       setOrders([])
       setBookings([])
-      setCourseAccessMap({})
-      setBookAccessMap({})
       return
     }
 
@@ -435,22 +401,6 @@ export default function AccountPage() {
         <main className="pt-20 section-padding sm:pt-24" dir="rtl">
           <div className="container-brand">
             <div className="rounded-[2rem] border border-border bg-card p-8 text-center text-muted-foreground">جاري تحميل الحساب...</div>
-          </div>
-        </main>
-        <Footer />
-      </>
-    )
-  }
-
-  if (configError) {
-    return (
-      <>
-        <Header />
-        <main className="pt-20 section-padding sm:pt-24" dir="rtl">
-          <div className="container-brand">
-            <div className="rounded-[2rem] border border-border bg-card p-8 text-center">
-              <p className="text-lg font-bold text-foreground">{configError}</p>
-            </div>
           </div>
         </main>
         <Footer />
@@ -661,35 +611,22 @@ export default function AccountPage() {
               {loadingData ? <p className="mt-4 text-muted-foreground">جاري التحميل...</p> : null}
               {!loadingData && paidCourses.length === 0 ? <p className="mt-4 text-muted-foreground">لا توجد كورسات مفعّلة بعد.</p> : null}
               <div className="mt-4 grid gap-3">
-                {paidCourses.map((item) => {
-                  const access = courseAccessMap[item.id]
-                  return (
+                {paidCourses.map((item) => (
                     <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
                       <p className="font-bold text-foreground">{item.productTitle}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {orderStatusLabel(item.status)} · {item.amount.toLocaleString("en-US")} EGP
                       </p>
                       <div className="mt-3 flex flex-wrap gap-2">
-                        <Link href={`/courses/${access?.slug || item.productId}`} className="inline-flex text-sm font-bold text-primary">
+                        <Link href={`/account/protected/course/${item.productId}`} className="inline-flex text-sm font-bold text-primary">
                           عرض الكورس
                         </Link>
-                        {access?.accessUrl ? (
-                          <a
-                            href={access.accessUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="inline-flex items-center gap-1 text-sm font-bold text-primary"
-                          >
-                            الدخول للكورس
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </a>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">سيتم تفعيل رابط الدخول قريبًا.</span>
-                        )}
+                        <Link href={`/courses/${item.productId}`} className="text-sm text-muted-foreground hover:text-primary">
+                          تفاصيل الكورس
+                        </Link>
                       </div>
                     </article>
-                  )
-                })}
+                  ))}
               </div>
             </section>
 
@@ -698,35 +635,23 @@ export default function AccountPage() {
               {loadingData ? <p className="mt-4 text-muted-foreground">جاري التحميل...</p> : null}
               {!loadingData && paidBooks.length === 0 ? <p className="mt-4 text-muted-foreground">لا توجد كتب مفعّلة بعد.</p> : null}
               <div className="mt-4 grid gap-3">
-                {paidBooks.map((item) => {
-                  const access = bookAccessMap[item.id]
-                  return (
+                {paidBooks.map((item) => (
                     <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
                       <p className="font-bold text-foreground">{item.productTitle}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
                         {orderStatusLabel(item.status)} · {item.amount.toLocaleString("en-US")} EGP
                       </p>
                       <div className="mt-3 flex flex-wrap gap-2">
-                        <Link href={`/books/${access?.slug || item.productId}`} className="inline-flex text-sm font-bold text-primary">
+                        <Link href={`/books/${item.productId}`} className="inline-flex text-sm font-bold text-primary">
                           عرض الكتاب
                         </Link>
-                        {access?.fileUrl ? (
-                          <button
-                            type="button"
-                            onClick={() => void handleBookDownload(item.id)}
-                            disabled={downloadingOrderId === item.id}
-                            className="inline-flex items-center gap-1 text-sm font-bold text-primary disabled:opacity-60"
-                          >
-                            {downloadingOrderId === item.id ? "جاري التحميل..." : "تحميل الكتاب"}
-                            <ExternalLink className="h-3.5 w-3.5" />
-                          </button>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">الملف غير متاح بعد، تواصلي مع الدعم.</span>
-                        )}
+                        <Link href={`/account/protected/book/${item.productId}`} className="inline-flex items-center gap-1 text-sm font-bold text-primary">
+                          فتح الكتاب المحمي
+                          <ExternalLink className="h-3.5 w-3.5" />
+                        </Link>
                       </div>
                     </article>
-                  )
-                })}
+                  ))}
               </div>
             </section>
           </div>

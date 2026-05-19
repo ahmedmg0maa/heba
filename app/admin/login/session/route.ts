@@ -1,15 +1,13 @@
-import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import { ADMIN_SESSION_COOKIE, hasConfiguredAdminPassword, isValidAdminSessionToken } from "@/lib/admin-auth"
+import { hasConfiguredAdminPassword } from "@/lib/admin-auth"
+import { requireAdmin } from "@/lib/require-admin"
 
 export const runtime = "nodejs"
 
 export async function GET() {
-  const token = (await cookies()).get(ADMIN_SESSION_COOKIE)?.value
-
   return NextResponse.json({
     ok: true,
     configured: hasConfiguredAdminPassword(),
-    authenticated: isValidAdminSessionToken(token),
+    authenticated: await requireAdmin(),
   })
 }
