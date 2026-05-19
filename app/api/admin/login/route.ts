@@ -90,7 +90,7 @@ export async function POST(request: Request) {
   cookieStore.set(ADMIN_SESSION_COOKIE, sessionToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: "lax",
     path: "/",
     maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
   })

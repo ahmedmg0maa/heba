@@ -9,7 +9,13 @@ function parseDate(value: unknown) {
 function formatDateTime(value: unknown) {
   const date = parseDate(value)
   if (!date) return "-"
-  return new Intl.DateTimeFormat("ar-EG", { dateStyle: "medium", timeStyle: "short" }).format(date)
+  return new Intl.DateTimeFormat("ar-EG", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    hour12: true,
+    timeZone: "Africa/Cairo",
+    numberingSystem: "arab",
+  }).format(date)
 }
 
 export default async function AdminAccessLogsPage() {
@@ -50,12 +56,13 @@ export default async function AdminAccessLogsPage() {
       </div>
 
       <div className="overflow-x-auto rounded-[2rem] border border-border bg-card shadow-sm">
-        <table className="w-full min-w-[1250px] text-right">
+        <table className="w-full min-w-[1280px] text-right">
           <thead className="bg-muted/70 text-sm">
             <tr>
               <th className="px-4 py-3">الوقت</th>
               <th className="px-4 py-3">المستخدم</th>
               <th className="px-4 py-3">المنتج</th>
+              <th className="px-4 py-3">الإجراء</th>
               <th className="px-4 py-3">IP</th>
               <th className="px-4 py-3">المتصفح</th>
               <th className="px-4 py-3">الحالة</th>
@@ -66,7 +73,7 @@ export default async function AdminAccessLogsPage() {
           <tbody>
             {logs.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-muted-foreground">
+                <td colSpan={9} className="px-4 py-8 text-center text-muted-foreground">
                   لا توجد سجلات بعد.
                 </td>
               </tr>
@@ -82,6 +89,7 @@ export default async function AdminAccessLogsPage() {
                     <p>{String(item.productType || "-")}</p>
                     <p className="text-xs">{String(item.productId || "-")}</p>
                   </td>
+                  <td className="px-4 py-3 text-muted-foreground">{String(item.action || "-")}</td>
                   <td className="px-4 py-3 text-muted-foreground">{String(item.ip || "-")}</td>
                   <td className="px-4 py-3 text-muted-foreground">
                     <div className="max-w-[280px] truncate">{String(item.userAgent || "-")}</div>
@@ -110,4 +118,3 @@ export default async function AdminAccessLogsPage() {
     </div>
   )
 }
-

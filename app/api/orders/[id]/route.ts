@@ -1,8 +1,7 @@
-import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import { ADMIN_SESSION_COOKIE, isValidAdminSessionToken } from "@/lib/admin-auth"
 import { getDocument, getFirebaseAdminErrorMessage, updateDocument } from "@/lib/firebase/admin"
 import { enqueueNotification } from "@/lib/notifications"
+import { requireAdmin } from "@/lib/require-admin"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -10,13 +9,8 @@ export const runtime = "nodejs"
 
 const allowedStatuses = new Set(["pending", "paid", "cancelled"])
 
-async function ensureAdminSession() {
-  const token = (await cookies()).get(ADMIN_SESSION_COOKIE)?.value
-  return isValidAdminSessionToken(token)
-}
-
 export async function GET(_request: Request, context: RouteContext) {
-  if (!(await ensureAdminSession())) {
+  if (!(await requireAdmin())) {
     return NextResponse.json({ ok: false, message: "غير مصرح." }, { status: 401 })
   }
 
@@ -34,7 +28,7 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
-  if (!(await ensureAdminSession())) {
+  if (!(await requireAdmin())) {
     return NextResponse.json({ ok: false, message: "غير مصرح." }, { status: 401 })
   }
 

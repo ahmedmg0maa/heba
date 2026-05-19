@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/require-admin"
 import { getDocument, updateDocument } from "@/lib/firebase/admin"
+import { enqueueNotification } from "@/lib/notifications"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -51,6 +52,13 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ ok: false, message: result.message || "تعذر تحديث حالة الطلب." }, { status: 500 })
   }
 
+  if (status === "paid") {
+    await enqueueNotification("order_paid", {
+      orderId: id,
+      userId: String(existingOrder.userId || ""),
+      email: String(existingOrder.email || ""),
+    })
+  }
+
   return NextResponse.json({ ok: true, status })
 }
-

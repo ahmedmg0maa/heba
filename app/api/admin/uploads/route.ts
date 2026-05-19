@@ -86,9 +86,11 @@ export async function POST(request: Request) {
     })
 
     const fileUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(objectPath)}?alt=media&token=${token}`
+    const secureUrl = `gs://${bucket.name}/${objectPath}`
     return NextResponse.json({
       ok: true,
       url: fileUrl,
+      secureUrl,
       path: objectPath,
       contentType: fileField.type || "application/octet-stream",
       size: fileField.size,

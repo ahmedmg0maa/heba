@@ -615,7 +615,7 @@ export default function AccountPage() {
                     <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
                       <p className="font-bold text-foreground">{item.productTitle}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {orderStatusLabel(item.status)} · {item.amount.toLocaleString("en-US")} EGP
+                        {orderStatusLabel(item.status)} · {item.amount.toLocaleString("ar-EG")} EGP
                       </p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <Link href={`/account/protected/course/${item.productId}`} className="inline-flex text-sm font-bold text-primary">
@@ -639,7 +639,7 @@ export default function AccountPage() {
                     <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
                       <p className="font-bold text-foreground">{item.productTitle}</p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {orderStatusLabel(item.status)} · {item.amount.toLocaleString("en-US")} EGP
+                        {orderStatusLabel(item.status)} · {item.amount.toLocaleString("ar-EG")} EGP
                       </p>
                       <div className="mt-3 flex flex-wrap gap-2">
                         <Link href={`/books/${item.productId}`} className="inline-flex text-sm font-bold text-primary">
@@ -664,12 +664,12 @@ export default function AccountPage() {
               {bookings.map((item) => (
                 <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
                   <p className="font-bold text-foreground">
-                    جلسة {item.duration} دقيقة · {item.amount.toLocaleString("en-US")} EGP
+                    جلسة {item.duration} دقيقة · {item.amount.toLocaleString("ar-EG")} EGP
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {bookingStatusLabel(item.status)}
-                    {item.date ? ` · ${item.date}` : ""}
-                    {item.time ? ` · ${item.time}` : ""}
+                  <p className="mt-2 text-xs">
+                    <span className="rounded-full bg-primary/10 px-2 py-1 font-bold text-primary">{bookingStatusLabel(item.status)}</span>
+                    {item.date ? <span className="mr-2 text-muted-foreground">{item.date}</span> : null}
+                    {item.time ? <span className="mr-2 text-muted-foreground">{item.time}</span> : null}
                   </p>
                 </article>
               ))}
@@ -684,10 +684,11 @@ export default function AccountPage() {
               {orders.map((item) => (
                 <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
                   <p className="font-bold text-foreground">{item.productTitle}</p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {orderTypeLabel(item.productType)} · {orderStatusLabel(item.status)}
+                  <p className="mt-2 text-xs">
+                    <span className="rounded-full bg-muted px-2 py-1 font-bold text-foreground">{orderTypeLabel(item.productType)}</span>
+                    <span className="mr-2 rounded-full bg-primary/10 px-2 py-1 font-bold text-primary">{orderStatusLabel(item.status)}</span>
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground latin">{item.amount.toLocaleString("en-US")} EGP</p>
+                  <p className="mt-1 text-xs text-muted-foreground latin">{item.amount.toLocaleString("ar-EG")} EGP</p>
                 </article>
               ))}
             </div>
@@ -713,6 +714,26 @@ export default function AccountPage() {
                 {actionLoading ? "جاري الحفظ..." : "حفظ البيانات"}
               </Button>
             </form>
+          </section>
+
+          <section className="mt-8 rounded-[2rem] border border-border bg-card p-6">
+            <h2 className="text-2xl font-black text-foreground">الدعم</h2>
+            <p className="mt-3 text-muted-foreground">إذا احتجت أي مساعدة في الطلبات أو التفعيل، فريق الدعم متاح لك.</p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link href="/contact">
+                <Button className="rounded-full bg-[var(--burgundy)] text-primary-foreground hover:bg-[var(--burgundy)]/90">
+                  تواصلي مع الدعم
+                </Button>
+              </Link>
+              <a
+                href="https://wa.me/201000000000"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-11 items-center justify-center rounded-full border border-border px-5 text-sm font-bold text-foreground hover:border-primary hover:text-primary"
+              >
+                واتساب الدعم
+              </a>
+            </div>
           </section>
         </div>
       </main>

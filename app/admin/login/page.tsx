@@ -22,7 +22,10 @@ export default function AdminLoginPage() {
 
     async function checkSession() {
       try {
-        const response = await fetch("/admin/login/session", { cache: "no-store" })
+        const response = await fetch("/admin/login/session", {
+          cache: "no-store",
+          credentials: "include",
+        })
         const result = await response.json()
         if (!result.configured) setSetupMode(true)
         if (result.authenticated) {
@@ -44,6 +47,7 @@ export default function AdminLoginPage() {
     try {
       const response = await fetch("/api/admin/login", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
       })

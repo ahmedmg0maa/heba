@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/require-admin"
 import { getDocument, updateDocument } from "@/lib/firebase/admin"
+import { enqueueNotification } from "@/lib/notifications"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -51,6 +52,13 @@ export async function PATCH(request: Request, context: RouteContext) {
     return NextResponse.json({ ok: false, message: result.message || "تعذر تحديث حالة الحجز." }, { status: 500 })
   }
 
+  if (status === "approved") {
+    await enqueueNotification("booking_approved", {
+      bookingId: id,
+      userId: String(existingBooking.userId || ""),
+      email: String(existingBooking.email || ""),
+    })
+  }
+
   return NextResponse.json({ ok: true, status })
 }
-

@@ -75,9 +75,7 @@ export default function CheckoutPage() {
                 subtitle: String(course.shortDescription || ""),
                 description: String(course.description || ""),
                 price: Number(course.price || 0),
-                meta: `${String(course.duration || "")}${
-                  course.lessonsCount ? ` · ${String(course.lessonsCount)} درس` : ""
-                }`,
+                meta: `${String(course.duration || "")}${course.lessonsCount ? ` · ${String(course.lessonsCount)} درس` : ""}`,
               }))
             : []),
           ...(Array.isArray(result.books)
@@ -154,14 +152,15 @@ export default function CheckoutPage() {
     <>
       <Header />
       <main dir="rtl">
-        <section className="pt-20 section-padding soft-gradient sm:pt-24">
+        <section className="section-padding soft-gradient pt-20 sm:pt-24">
           <div className="container-brand grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
             <aside className="rounded-[2.5rem] border border-border bg-card p-6 shadow-xl md:p-8">
               <Link
                 href={selectedProduct?.type === "course" ? "/courses" : "/books"}
                 className="mb-6 inline-flex items-center gap-2 text-sm font-bold text-muted-foreground hover:text-primary"
               >
-                <ArrowRight className="h-4 w-4" /> العودة إلى المنتجات
+                <ArrowRight className="h-4 w-4" />
+                العودة إلى المنتجات
               </Link>
 
               <div className="rounded-[2rem] bg-primary p-6 text-primary-foreground">
@@ -174,9 +173,7 @@ export default function CheckoutPage() {
               <div className="mt-6 space-y-4 text-sm text-muted-foreground">
                 <div className="flex items-start justify-between gap-4 rounded-2xl bg-muted p-4">
                   <span>النوع</span>
-                  <strong className="text-foreground">
-                    {selectedProduct?.type === "course" ? "كورس / برنامج" : "كتاب / ملف رقمي"}
-                  </strong>
+                  <strong className="text-foreground">{selectedProduct?.type === "course" ? "كورس / برنامج" : "كتاب / ملف رقمي"}</strong>
                 </div>
                 <div className="flex items-start justify-between gap-4 rounded-2xl bg-muted p-4">
                   <span>التفاصيل</span>
@@ -184,18 +181,18 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex items-center justify-between rounded-2xl border border-accent/30 bg-accent/10 p-4">
                   <span className="font-bold text-foreground">الإجمالي</span>
-                  <strong className="latin text-3xl text-primary">
-                    {selectedProduct?.price?.toLocaleString("en-US") || "0"} EGP
-                  </strong>
+                  <strong className="text-3xl text-primary">{selectedProduct?.price?.toLocaleString("ar-EG") || "0"} EGP</strong>
                 </div>
               </div>
 
               <div className="mt-6 grid gap-3 text-sm text-muted-foreground">
                 <p className="flex items-center gap-2">
-                  <ShieldCheck className="h-4 w-4 text-accent" /> سيتم مراجعة الطلب واعتماده خلال وقت قصير.
+                  <ShieldCheck className="h-4 w-4 text-accent" />
+                  حالة الطلب تبدأ كـ قيد المراجعة حتى تأكيد الدفع.
                 </p>
                 <p className="flex items-center gap-2">
-                  <LockKeyhole className="h-4 w-4 text-accent" /> بياناتك محمية وتستخدم فقط لإتمام الطلب.
+                  <LockKeyhole className="h-4 w-4 text-accent" />
+                  لن يتم تفعيل الوصول قبل الاعتماد اليدوي من فريق الإدارة.
                 </p>
               </div>
             </aside>
@@ -211,7 +208,7 @@ export default function CheckoutPage() {
                     <p className="eyebrow">الدفع</p>
                     <h2 className="mt-3 text-3xl font-black text-foreground sm:text-4xl">أكملي بيانات الطلب</h2>
                     <p className="mt-3 leading-8 text-muted-foreground">
-                      بعد إرسال الطلب ستظهر حالته في حسابك كـ قيد المراجعة حتى اعتماد الدفع.
+                      بعد إرسال الطلب ستظهر حالته في حسابك كـ قيد المراجعة إلى أن يتم تأكيد الدفع وتفعيل الوصول.
                     </p>
                   </div>
 
@@ -224,7 +221,7 @@ export default function CheckoutPage() {
                       <SelectContent>
                         {products.map((product) => (
                           <SelectItem key={makeKey(product)} value={makeKey(product)}>
-                            {product.title} — {product.price.toLocaleString("en-US")} ج.م
+                            {product.title} — {product.price.toLocaleString("ar-EG")} ج.م
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -244,14 +241,7 @@ export default function CheckoutPage() {
 
                   <div className="space-y-2">
                     <Label htmlFor="email">البريد الإلكتروني</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      type="email"
-                      required
-                      className="h-12 rounded-2xl bg-background"
-                      placeholder="name@email.com"
-                    />
+                    <Input id="email" name="email" type="email" required className="h-12 rounded-2xl bg-background" placeholder="name@email.com" />
                   </div>
 
                   <div className="space-y-2">
@@ -268,14 +258,21 @@ export default function CheckoutPage() {
                     </Select>
                   </div>
 
-                  {error ? (
-                    <p className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm font-bold text-destructive">
-                      {error}
-                    </p>
-                  ) : null}
+                  <label className="flex items-start gap-3 rounded-2xl border border-border bg-secondary/35 p-3">
+                    <Checkbox checked={acceptedTerms} onCheckedChange={(checked) => setAcceptedTerms(checked === true)} />
+                    <span className="text-sm leading-7 text-muted-foreground">
+                      أوافق على{" "}
+                      <Link href="/terms" className="font-bold text-primary hover:underline">
+                        الشروط والأحكام
+                      </Link>{" "}
+                      وسياسة الاستخدام، وأفهم أن التفعيل يتم بعد مراجعة الدفع.
+                    </span>
+                  </label>
+
+                  {error ? <p className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm font-bold text-destructive">{error}</p> : null}
 
                   <Button
-                    disabled={isSubmitting || !selectedProduct}
+                    disabled={isSubmitting || !selectedProduct || !acceptedTerms}
                     type="submit"
                     className="h-12 rounded-full bg-[var(--burgundy)] text-base text-primary-foreground hover:bg-[var(--burgundy)]/90"
                   >

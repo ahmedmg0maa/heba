@@ -17,6 +17,7 @@ import {
   validateBookingSlot,
   type SessionDuration,
 } from "@/lib/booking-rules"
+import { enqueueNotification } from "@/lib/notifications"
 
 export const runtime = "nodejs"
 
@@ -136,6 +137,12 @@ export async function POST(request: Request) {
         getFirebaseAdminErrorMessage(saved.error) || "تعذر حفظ الحجز حاليًا. يرجى المحاولة مرة أخرى."
       return NextResponse.json({ ok: false, message }, { status: 503 })
     }
+
+    await enqueueNotification("booking_created", {
+      bookingId: saved.id,
+      userId,
+      email,
+    })
 
     return NextResponse.json({
       ok: true,

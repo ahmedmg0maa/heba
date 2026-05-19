@@ -2,7 +2,7 @@
 
 import type { FormEvent } from "react"
 import { useEffect, useMemo, useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { onAuthStateChanged } from "firebase/auth"
 import { CalendarDays, CheckCircle2, MessageCircle } from "lucide-react"
 import { Header } from "@/components/layout/header"
@@ -78,6 +78,7 @@ function slotTime(value: string) {
 }
 
 export default function BookingPage() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const initialDuration = searchParams.get("duration") === "90" ? 90 : 60
   const [submitted, setSubmitted] = useState<BookingSuccess | null>(null)
@@ -220,17 +221,19 @@ export default function BookingPage() {
       })
       const result = await response.json()
 
-      if (process.env.NODE_ENV === "development") {
-        console.log("[booking] POST /api/booking", { status: response.status, result })
-      }
+      
 
       if (!response.ok || !result.ok) throw new Error(result.message || "تعذر إرسال طلب الحجز.")
-      setSubmitted({
+      const successData = {
         bookingId: result.bookingId,
         price: result.price,
         status: result.status,
         message: result.message,
-      })
+      }
+      setSubmitted(successData)
+      router.push(
+        `/booking/success?bookingId=${encodeURIComponent(String(result.bookingId || ""))}&status=${encodeURIComponent(String(result.status || "pending"))}`,
+      )
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "حدث خطأ غير متوقع.")
     } finally {

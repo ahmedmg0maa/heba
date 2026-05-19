@@ -6,6 +6,7 @@ import {
   isFirebaseConfigured,
 } from "@/lib/firebase/admin"
 import { getCatalogBookBySlug, getCatalogCourseBySlug } from "@/lib/catalog"
+import { enqueueNotification } from "@/lib/notifications"
 
 export const runtime = "nodejs"
 
@@ -109,6 +110,12 @@ export async function POST(request: Request) {
         getFirebaseAdminErrorMessage(saved.error) || "تعذر إرسال الطلب حاليًا. يرجى المحاولة مرة أخرى."
       return NextResponse.json({ ok: false, message }, { status: 503 })
     }
+
+    await enqueueNotification("order_created", {
+      orderId: saved.id,
+      userId,
+      email,
+    })
 
     return NextResponse.json({
       ok: true,
