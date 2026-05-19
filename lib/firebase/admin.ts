@@ -271,7 +271,7 @@ export async function updateDocument(collectionName: string, id: string, data: S
   const db = getDb()
   if (!db) return notConfiguredResult()
 
-  const payload = { ...data, updatedAt: nowISO() }
+  const payload = { ...data, updatedAt: FieldValue.serverTimestamp() }
   try {
     await db.collection(collectionName).doc(id).update(payload)
     return { ok: true }

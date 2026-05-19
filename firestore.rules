@@ -5,57 +5,58 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    function userEmail() {
+      return isSignedIn() && request.auth.token.email is string ? request.auth.token.email : null;
     }
 
-    function isAdmin() {
-      return isSignedIn() &&
-        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == "admin";
+    function isUserDocOwner() {
+      return isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    function isUserRequestOwner() {
+      return isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    function emailMatchesResource() {
+      return userEmail() != null && resource.data.email == userEmail();
+    }
+
+    function emailMatchesRequest() {
+      return userEmail() != null && request.resource.data.email == userEmail();
     }
 
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId) || isAdmin();
-      allow delete: if isAdmin();
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isSignedIn() && request.auth.uid == userId;
+      allow delete: if false;
     }
 
     match /orders/{orderId} {
-      allow read: if isAdmin() || (
-        isSignedIn() &&
-        (
-          resource.data.userId == request.auth.uid ||
-          resource.data.email == request.auth.token.email
-        )
-      );
-      allow create, update, delete: if isAdmin();
+      allow read: if isSignedIn() && (isUserDocOwner() || emailMatchesResource());
+      allow create: if isSignedIn() && (isUserRequestOwner() || emailMatchesRequest());
+      allow update, delete: if false;
     }
 
     match /bookings/{bookingId} {
-      allow read: if isAdmin() || (
-        isSignedIn() &&
-        (
-          resource.data.userId == request.auth.uid ||
-          resource.data.email == request.auth.token.email
-        )
-      );
-      allow create, update, delete: if isAdmin();
+      allow read: if isSignedIn() && (isUserDocOwner() || emailMatchesResource());
+      allow create: if request.resource.data.status == "pending";
+      allow update, delete: if false;
     }
 
     match /books/{bookId} {
-      allow read: if isAdmin() || resource.data.status == "active";
-      allow create, update, delete: if isAdmin();
+      allow read: if resource.data.status == "active";
+      allow create, update, delete: if false;
     }
 
     match /courses/{courseId} {
-      allow read: if isAdmin() || resource.data.status == "active";
-      allow create, update, delete: if isAdmin();
+      allow read: if resource.data.status == "active";
+      allow create, update, delete: if false;
     }
 
     match /messages/{messageId} {
-      allow read, write: if isAdmin();
+      allow read, write: if false;
     }
   }
 }
+
