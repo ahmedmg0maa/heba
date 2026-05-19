@@ -424,7 +424,7 @@ export async function resolveProtectedContentAccess(options: ResolveOptions): Pr
       console.error("Failed to generate signed URL:", error)
       return { ok: false, status: 500, message: "تعذر إنشاء رابط آمن للمحتوى الآن." }
     }
-  } else if (productType === "course" && /^https:\/\//i.test(resourceUrl)) {
+  } else if (/^https:\/\//i.test(resourceUrl)) {
     signedUrl = resourceUrl
   } else {
     await logProtectedAccess({

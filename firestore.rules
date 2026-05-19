@@ -13,37 +13,31 @@ service cloud.firestore {
       return isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
-    function isUserRequestOwner() {
-      return isSignedIn() && request.resource.data.userId == request.auth.uid;
-    }
-
     function emailMatchesResource() {
       return userEmail() != null && resource.data.email == userEmail();
     }
 
-    function emailMatchesRequest() {
-      return userEmail() != null && request.resource.data.email == userEmail();
-    }
-
+    // User profile docs
     match /users/{userId} {
-      allow read: if isSignedIn() && request.auth.uid == userId;
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isSignedIn() && request.auth.uid == userId;
+      allow read, create, update: if isSignedIn() && request.auth.uid == userId;
       allow delete: if false;
     }
 
+    // Orders are created/updated on the server only (Firebase Admin SDK).
+    // Client can only read own docs by uid or email.
     match /orders/{orderId} {
       allow read: if isSignedIn() && (isUserDocOwner() || emailMatchesResource());
-      allow create: if isSignedIn() && (isUserRequestOwner() || emailMatchesRequest());
-      allow update, delete: if false;
+      allow create, update, delete: if false;
     }
 
+    // Bookings are created/updated on the server only (Firebase Admin SDK).
+    // Client can only read own docs by uid or email.
     match /bookings/{bookingId} {
       allow read: if isSignedIn() && (isUserDocOwner() || emailMatchesResource());
-      allow create: if request.resource.data.status == "pending";
-      allow update, delete: if false;
+      allow create, update, delete: if false;
     }
 
+    // Public catalog visibility (active only). Writes are server-side only.
     match /books/{bookId} {
       allow read: if resource.data.status == "active";
       allow create, update, delete: if false;
@@ -54,9 +48,17 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    // Internal collections: server-side only.
     match /messages/{messageId} {
+      allow read, write: if false;
+    }
+
+    match /protected_access_logs/{logId} {
+      allow read, write: if false;
+    }
+
+    match /protected_active_sessions/{sessionId} {
       allow read, write: if false;
     }
   }
 }
-

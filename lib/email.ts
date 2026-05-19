@@ -10,8 +10,16 @@ function text(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
 }
 
+function getFromEmail() {
+  return text(process.env.EMAIL_FROM) || text(process.env.RESEND_FROM_EMAIL)
+}
+
+export function getAdminNotifyEmail() {
+  return text(process.env.ADMIN_NOTIFY_EMAIL) || text(process.env.ADMIN_NOTIFICATION_EMAIL)
+}
+
 function hasResendConfig() {
-  return Boolean(text(process.env.RESEND_API_KEY) && text(process.env.RESEND_FROM_EMAIL))
+  return Boolean(text(process.env.RESEND_API_KEY) && getFromEmail())
 }
 
 export async function sendEmailIfConfigured(payload: EmailPayload) {
@@ -33,7 +41,7 @@ export async function sendEmailIfConfigured(payload: EmailPayload) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: process.env.RESEND_FROM_EMAIL,
+        from: getFromEmail(),
         to: [to],
         subject: payload.subject,
         html: payload.html,
