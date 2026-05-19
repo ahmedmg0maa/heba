@@ -1,7 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import { Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { toast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -20,28 +22,39 @@ export function OrderStatusSelect({
 }) {
   const router = useRouter()
   const [status, setStatus] = useState(initialStatus || "pending")
-  const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState("")
+  const [loadingStatus, setLoadingStatus] = useState<"paid" | "cancelled" | "">("")
 
   async function updateStatus(nextStatus: "paid" | "cancelled") {
-    setLoading(true)
-    setMessage("")
+    setLoadingStatus(nextStatus)
     try {
       const response = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}`, {
         method: "PATCH",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: nextStatus }),
       })
       const data = await response.json()
-      if (!response.ok || !data.ok) throw new Error(data.message || "تعذر التحديث.")
+      if (!response.ok || !data.ok) throw new Error(data.message || "تعذر تحديث الطلب.")
+
       setStatus(nextStatus)
-      setMessage("تم الحفظ")
+      toast({
+        title: "تم تحديث الطلب",
+        description: `الحالة الحالية: ${statusLabel(nextStatus)}`,
+      })
       router.refresh()
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "تعذر التحديث")
+      toast({
+        title: "تعذر تحديث الطلب",
+        description: error instanceof Error ? error.message : "تعذر تحديث الطلب.",
+        variant: "destructive",
+      })
     } finally {
-      setLoading(false)
+      setLoadingStatus("")
     }
+  }
+
+  function isLoading(nextStatus: "paid" | "cancelled") {
+    return loadingStatus === nextStatus
   }
 
   return (
@@ -51,30 +64,30 @@ export function OrderStatusSelect({
         <Button
           type="button"
           size="sm"
-          disabled={loading}
+          disabled={Boolean(loadingStatus)}
           onClick={() => updateStatus("paid")}
           className={cn(
             "h-8 rounded-full px-3 text-xs",
-            status === "paid" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground hover:bg-primary/90 hover:text-primary-foreground",
+            status === "paid"
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-foreground hover:bg-primary/90 hover:text-primary-foreground",
           )}
         >
+          {isLoading("paid") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
           تأكيد الدفع
         </Button>
         <Button
           type="button"
           size="sm"
-          disabled={loading}
+          disabled={Boolean(loadingStatus)}
           variant="outline"
           onClick={() => updateStatus("cancelled")}
-          className={cn(
-            "h-8 rounded-full px-3 text-xs",
-            status === "cancelled" ? "border-destructive text-destructive" : "",
-          )}
+          className={cn("h-8 rounded-full px-3 text-xs", status === "cancelled" ? "border-destructive text-destructive" : "")}
         >
+          {isLoading("cancelled") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
           إلغاء الطلب
         </Button>
       </div>
-      {message ? <span className="block text-[11px] text-muted-foreground">{message}</span> : null}
     </div>
   )
 }

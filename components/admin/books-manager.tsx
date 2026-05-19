@@ -75,9 +75,10 @@ function uploadAdminFile(params: {
   file: File
   folder: string
   entityId: string
+  preferSecureUrl?: boolean
   onProgress: (progress: number) => void
 }) {
-  const { file, folder, entityId, onProgress } = params
+  const { file, folder, entityId, preferSecureUrl = false, onProgress } = params
   return new Promise<string>((resolve, reject) => {
     const request = new XMLHttpRequest()
     const formData = new FormData()
@@ -86,6 +87,7 @@ function uploadAdminFile(params: {
     formData.append("entityId", entityId)
 
     request.open("POST", "/api/admin/uploads")
+    request.withCredentials = true
 
     request.upload.onprogress = (event) => {
       if (!event.lengthComputable) return
@@ -95,21 +97,27 @@ function uploadAdminFile(params: {
     request.onerror = () => reject(new Error("تعذر رفع الملف."))
     request.onabort = () => reject(new Error("تم إلغاء الرفع."))
     request.onload = () => {
-      let payload: { ok?: boolean; message?: string; url?: string } = {}
+      let payload: { ok?: boolean; message?: string; url?: string; secureUrl?: string } = {}
       try {
-        payload = JSON.parse(request.responseText || "{}") as { ok?: boolean; message?: string; url?: string }
+        payload = JSON.parse(request.responseText || "{}") as {
+          ok?: boolean
+          message?: string
+          url?: string
+          secureUrl?: string
+        }
       } catch {
         reject(new Error("تعذر قراءة نتيجة الرفع."))
         return
       }
 
-      if (request.status < 200 || request.status >= 300 || !payload.ok || !payload.url) {
+      if (request.status < 200 || request.status >= 300 || !payload.ok || (!payload.secureUrl && !payload.url)) {
         reject(new Error(payload.message || "تعذر رفع الملف."))
         return
       }
 
       onProgress(100)
-      resolve(payload.url)
+      const resolvedUrl = preferSecureUrl ? payload.secureUrl || payload.url : payload.url || payload.secureUrl
+      resolve(resolvedUrl || "")
     }
 
     request.send(formData)
@@ -133,7 +141,10 @@ export function BooksManager() {
     setLoading(true)
     setError("")
     try {
-      const response = await fetch("/api/admin/books", { cache: "no-store" })
+      const response = await fetch("/api/admin/books", {
+        cache: "no-store",
+        credentials: "include",
+      })
       const data = await response.json()
       if (!response.ok || !data.ok) throw new Error(data.message || "تعذر تحميل الكتب.")
       setItems(Array.isArray(data.books) ? data.books : [])
@@ -156,6 +167,7 @@ export function BooksManager() {
         file,
         folder: "books/covers",
         entityId: entityIdFromForm(form),
+        preferSecureUrl: false,
         onProgress: (progress) => setCoverUpload((prev) => ({ ...prev, progress })),
       })
       setForm((prev) => ({ ...prev, coverImageUrl: url }))
@@ -177,6 +189,7 @@ export function BooksManager() {
         file,
         folder: "books/files",
         entityId: entityIdFromForm(form),
+        preferSecureUrl: true,
         onProgress: (progress) => setBookFileUpload((prev) => ({ ...prev, progress })),
       })
       setForm((prev) => ({ ...prev, fileUrl: url }))
@@ -214,6 +227,7 @@ export function BooksManager() {
       const method = isEditing ? "PATCH" : "POST"
       const response = await fetch(endpoint, {
         method,
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
@@ -257,6 +271,7 @@ export function BooksManager() {
     try {
       const response = await fetch(`/api/admin/books/${encodeURIComponent(id)}`, {
         method: "PATCH",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status }),
       })
@@ -274,7 +289,10 @@ export function BooksManager() {
     setError("")
     setMessage("")
     try {
-      const response = await fetch(`/api/admin/books/${encodeURIComponent(id)}`, { method: "DELETE" })
+      const response = await fetch(`/api/admin/books/${encodeURIComponent(id)}`, {
+        method: "DELETE",
+        credentials: "include",
+      })
       const data = await response.json()
       if (!response.ok || !data.ok) throw new Error(data.message || "تعذر حذف الكتاب.")
       setMessage("تم حذف الكتاب.")

@@ -23,7 +23,10 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter()
 
   async function logout() {
-    await fetch("/api/admin/logout", { method: "POST" })
+    await fetch("/api/admin/logout", {
+      method: "POST",
+      credentials: "include",
+    })
     router.push("/admin/login")
     router.refresh()
   }

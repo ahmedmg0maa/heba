@@ -1,7 +1,9 @@
 "use client"
 
 import { useState } from "react"
+import { Loader2 } from "lucide-react"
 import { useRouter } from "next/navigation"
+import { toast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -21,28 +23,40 @@ export function BookingStatusSelect({
 }) {
   const router = useRouter()
   const [status, setStatus] = useState(initialStatus || "pending")
-  const [loading, setLoading] = useState(false)
-  const [message, setMessage] = useState("")
+  const [loadingStatus, setLoadingStatus] = useState<"approved" | "cancelled" | "completed" | "">("")
 
   async function updateStatus(nextStatus: "approved" | "cancelled" | "completed") {
-    setLoading(true)
-    setMessage("")
+    setLoadingStatus(nextStatus)
     try {
       const response = await fetch(`/api/admin/bookings/${encodeURIComponent(bookingId)}`, {
         method: "PATCH",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: nextStatus }),
       })
+
       const data = await response.json()
-      if (!response.ok || !data.ok) throw new Error(data.message || "تعذر التحديث.")
+      if (!response.ok || !data.ok) throw new Error(data.message || "تعذر تحديث الحجز.")
+
       setStatus(nextStatus)
-      setMessage("تم الحفظ")
+      toast({
+        title: "تم تحديث الحجز",
+        description: `الحالة الحالية: ${statusLabel(nextStatus)}`,
+      })
       router.refresh()
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "تعذر التحديث")
+      toast({
+        title: "تعذر تحديث الحجز",
+        description: error instanceof Error ? error.message : "تعذر تحديث الحجز.",
+        variant: "destructive",
+      })
     } finally {
-      setLoading(false)
+      setLoadingStatus("")
     }
+  }
+
+  function isLoading(nextStatus: "approved" | "cancelled" | "completed") {
+    return loadingStatus === nextStatus
   }
 
   return (
@@ -52,43 +66,41 @@ export function BookingStatusSelect({
         <Button
           type="button"
           size="sm"
-          disabled={loading}
+          disabled={Boolean(loadingStatus)}
           onClick={() => updateStatus("approved")}
           className={cn(
             "h-8 rounded-full px-3 text-xs",
-            status === "approved" ? "bg-primary text-primary-foreground" : "bg-muted text-foreground hover:bg-primary/90 hover:text-primary-foreground",
+            status === "approved"
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-foreground hover:bg-primary/90 hover:text-primary-foreground",
           )}
         >
+          {isLoading("approved") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
           قبول الحجز
         </Button>
         <Button
           type="button"
           size="sm"
-          disabled={loading}
+          disabled={Boolean(loadingStatus)}
           onClick={() => updateStatus("cancelled")}
           variant="outline"
-          className={cn(
-            "h-8 rounded-full px-3 text-xs",
-            status === "cancelled" ? "border-destructive text-destructive" : "",
-          )}
+          className={cn("h-8 rounded-full px-3 text-xs", status === "cancelled" ? "border-destructive text-destructive" : "")}
         >
+          {isLoading("cancelled") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
           إلغاء الحجز
         </Button>
         <Button
           type="button"
           size="sm"
-          disabled={loading || status !== "approved"}
+          disabled={Boolean(loadingStatus) || status !== "approved"}
           onClick={() => updateStatus("completed")}
           variant="outline"
-          className={cn(
-            "h-8 rounded-full px-3 text-xs",
-            status === "completed" ? "border-accent text-accent" : "",
-          )}
+          className={cn("h-8 rounded-full px-3 text-xs", status === "completed" ? "border-accent text-accent" : "")}
         >
+          {isLoading("completed") ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
           تمت الجلسة
         </Button>
       </div>
-      {message ? <span className="block text-[11px] text-muted-foreground">{message}</span> : null}
     </div>
   )
 }
