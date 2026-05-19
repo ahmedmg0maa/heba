@@ -27,7 +27,7 @@ export function OrderStatusSelect({
     setLoading(true)
     setMessage("")
     try {
-      const response = await fetch(`/api/orders/${encodeURIComponent(orderId)}`, {
+      const response = await fetch(`/api/admin/orders/${encodeURIComponent(orderId)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: nextStatus }),

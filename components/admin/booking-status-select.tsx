@@ -28,7 +28,7 @@ export function BookingStatusSelect({
     setLoading(true)
     setMessage("")
     try {
-      const response = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}`, {
+      const response = await fetch(`/api/admin/bookings/${encodeURIComponent(bookingId)}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: nextStatus }),

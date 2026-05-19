@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { BookOpen, Calendar, Home, Layers3, LogOut, Menu, MessageSquare, ShoppingCart, User, X } from "lucide-react"
+import { BookOpen, Calendar, Eye, Home, Layers3, LogOut, Menu, MessageSquare, ShoppingCart, User, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 
@@ -13,6 +13,7 @@ const navigation = [
   { name: "الطلبات", href: "/admin/orders", icon: ShoppingCart },
   { name: "الكورسات", href: "/admin/courses", icon: Layers3 },
   { name: "الكتب", href: "/admin/books", icon: BookOpen },
+  { name: "سجل الوصول", href: "/admin/access", icon: Eye },
   { name: "الرسائل", href: "/admin/messages", icon: MessageSquare },
 ]
 
