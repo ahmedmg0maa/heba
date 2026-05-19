@@ -28,8 +28,7 @@ export function Footer() {
               </div>
             </Link>
             <p className="mt-6 max-w-lg text-sm leading-8 text-muted-foreground">
-              منصة عربية هادئة تجمع بين الجلسات الفردية، البرامج العملية، والكتب المختارة بعناية لتمنحكِ بداية أوضح
-              وخطوات أكثر اتزانًا.
+              منصة عربية هادئة تجمع بين الجلسات الفردية، البرامج العملية، والكتب المختارة بعناية لتمنحك بداية أوضح وخطوات أكثر اتزانًا.
             </p>
             <div className="mt-6 flex gap-3">
               {socialLinks.map((social) => (
@@ -111,6 +110,9 @@ export function Footer() {
             </Link>
             <Link href="/terms" className="transition hover:text-accent">
               الشروط والأحكام
+            </Link>
+            <Link href="/refund-policy" className="transition hover:text-accent">
+              سياسة الاسترجاع
             </Link>
           </div>
         </div>
