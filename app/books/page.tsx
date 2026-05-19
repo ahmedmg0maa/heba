@@ -11,6 +11,15 @@ export const dynamic = "force-dynamic"
 export const metadata: Metadata = {
   title: "الكتب",
   description: "كتب هبة الشريف المتاحة حاليًا.",
+  alternates: {
+    canonical: "/books",
+  },
+  openGraph: {
+    title: "كتب هبة الشريف",
+    description: "كتب عملية عربية تساعدك على الوضوح والاتزان.",
+    url: "/books",
+    images: ["/images/heba-banner.jpeg"],
+  },
 }
 
 export default async function BooksPage() {

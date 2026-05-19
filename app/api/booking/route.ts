@@ -18,6 +18,7 @@ import {
   type SessionDuration,
 } from "@/lib/booking-rules"
 import { enqueueNotification } from "@/lib/notifications"
+import { trackServerEvent } from "@/lib/analytics"
 
 export const runtime = "nodejs"
 
@@ -142,6 +143,13 @@ export async function POST(request: Request) {
       bookingId: saved.id,
       userId,
       email,
+    })
+    void trackServerEvent("booking_created", {
+      bookingId: saved.id,
+      date: slot.dateKey,
+      time: slot.time,
+      duration: sessionDuration,
+      amount: price.finalPrice,
     })
 
     return NextResponse.json({

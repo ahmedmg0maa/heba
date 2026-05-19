@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getFirebaseClientAuth } from "@/lib/firebase/client"
 import { getSessionPrice, SESSION_PRICES, type SessionDuration } from "@/lib/booking-rules"
+import { trackClientEvent } from "@/lib/analytics"
 
 type BookingPrice = {
   finalPrice: number
@@ -212,6 +213,12 @@ export default function BookingPage() {
       message: String(formData.get("message") ?? "").trim(),
       userId,
     }
+    trackClientEvent("submit_booking", {
+      date: selectedDate,
+      startTime: selectedSlot,
+      duration,
+      amount: price.finalPrice,
+    })
 
     try {
       const response = await fetch("/api/booking", {

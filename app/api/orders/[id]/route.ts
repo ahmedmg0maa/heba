@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
+import { requireAdmin } from "@/lib/admin-session"
 import { getDocument, getFirebaseAdminErrorMessage, updateDocument } from "@/lib/firebase/admin"
 import { enqueueNotification } from "@/lib/notifications"
-import { requireAdmin } from "@/lib/require-admin"
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -10,8 +10,9 @@ export const runtime = "nodejs"
 const allowedStatuses = new Set(["pending", "paid", "cancelled"])
 
 export async function GET(_request: Request, context: RouteContext) {
-  if (!(await requireAdmin())) {
-    return NextResponse.json({ ok: false, message: "غير مصرح." }, { status: 401 })
+  const admin = await requireAdmin()
+  if (!admin.ok) {
+    return NextResponse.json({ error: "غير مصرح" }, { status: 401 })
   }
 
   const { id } = await context.params
@@ -28,8 +29,9 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
-  if (!(await requireAdmin())) {
-    return NextResponse.json({ ok: false, message: "غير مصرح." }, { status: 401 })
+  const admin = await requireAdmin()
+  if (!admin.ok) {
+    return NextResponse.json({ error: "غير مصرح" }, { status: 401 })
   }
 
   const { id } = await context.params

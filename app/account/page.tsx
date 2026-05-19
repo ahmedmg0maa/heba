@@ -20,6 +20,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getFirebaseClientAuth, getFirebaseClientDb, hasFirebasePublicConfig } from "@/lib/firebase/client"
+import { buildWhatsAppUrl } from "@/lib/support"
 
 type AccountUser = {
   uid: string
@@ -168,6 +169,12 @@ export default function AccountPage() {
   const paidOrders = useMemo(() => orders.filter((item) => item.status === "paid"), [orders])
   const paidCourses = useMemo(() => paidOrders.filter((item) => item.productType === "course"), [paidOrders])
   const paidBooks = useMemo(() => paidOrders.filter((item) => item.productType === "book"), [paidOrders])
+  const supportWhatsappUrl = useMemo(() => {
+    const latestOrderId = orders[0]?.id || ""
+    const latestBookingId = bookings[0]?.id || ""
+    const message = `مرحبًا، أحتاج مساعدة في حسابي.${latestOrderId ? ` رقم الطلب: ${latestOrderId}.` : ""}${latestBookingId ? ` رقم الحجز: ${latestBookingId}.` : ""}`
+    return buildWhatsAppUrl(message)
+  }, [bookings, orders])
 
   useEffect(() => {
     if (!hasFirebasePublicConfig()) {
@@ -725,14 +732,16 @@ export default function AccountPage() {
                   تواصلي مع الدعم
                 </Button>
               </Link>
-              <a
-                href="https://wa.me/201000000000"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex h-11 items-center justify-center rounded-full border border-border px-5 text-sm font-bold text-foreground hover:border-primary hover:text-primary"
-              >
-                واتساب الدعم
-              </a>
+              {supportWhatsappUrl ? (
+                <a
+                  href={supportWhatsappUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-11 items-center justify-center rounded-full border border-border px-5 text-sm font-bold text-foreground hover:border-primary hover:text-primary"
+                >
+                  واتساب الدعم
+                </a>
+              ) : null}
             </div>
           </section>
         </div>

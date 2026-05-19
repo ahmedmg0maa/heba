@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server"
 import { deleteDocument, getFirebaseAdminErrorMessage, setDocument } from "@/lib/firebase/admin"
-import { requireAdmin } from "@/lib/require-admin"
+import { requireAdmin } from "@/lib/admin-session"
+import { normalizeGoogleDriveCoverUrl, normalizeGoogleDriveResourceUrl } from "@/lib/google-drive"
+import { trackServerEvent } from "@/lib/analytics"
 
 type RouteContext = { params: Promise<{ id: string }> }
+
 export const runtime = "nodejs"
 
 function asText(value: unknown) {
@@ -21,8 +24,9 @@ function asStatus(value: unknown): "active" | "draft" | "hidden" {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
-  if (!(await requireAdmin())) {
-    return NextResponse.json({ ok: false, message: "غير مصرح." }, { status: 401 })
+  const admin = await requireAdmin()
+  if (!admin.ok) {
+    return NextResponse.json({ error: "غير مصرح" }, { status: 401 })
   }
 
   const { id } = await context.params
@@ -43,11 +47,11 @@ export async function PATCH(request: Request, context: RouteContext) {
   if ("description" in body) payload.description = asText(body.description)
   if ("shortDescription" in body) payload.shortDescription = asText(body.shortDescription)
   if ("price" in body) payload.price = asNumber(body.price)
-  if ("coverImageUrl" in body) payload.coverImageUrl = asText(body.coverImageUrl)
+  if ("coverImageUrl" in body) payload.coverImageUrl = normalizeGoogleDriveCoverUrl(asText(body.coverImageUrl))
   if ("status" in body) payload.status = asStatus(body.status)
   if ("lessonsCount" in body) payload.lessonsCount = asNumber(body.lessonsCount)
   if ("duration" in body) payload.duration = asText(body.duration)
-  if ("accessUrl" in body) payload.accessUrl = asText(body.accessUrl)
+  if ("accessUrl" in body) payload.accessUrl = normalizeGoogleDriveResourceUrl(asText(body.accessUrl))
 
   if (Object.keys(payload).length === 0) {
     return NextResponse.json({ ok: false, message: "لا توجد بيانات للتحديث." }, { status: 400 })
@@ -60,13 +64,19 @@ export async function PATCH(request: Request, context: RouteContext) {
       { status: 500 },
     )
   }
+  void trackServerEvent("admin_action", {
+    resource: "course",
+    action: "update",
+    courseId: id,
+  })
 
   return NextResponse.json({ ok: true })
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
-  if (!(await requireAdmin())) {
-    return NextResponse.json({ ok: false, message: "غير مصرح." }, { status: 401 })
+  const admin = await requireAdmin()
+  if (!admin.ok) {
+    return NextResponse.json({ error: "غير مصرح" }, { status: 401 })
   }
 
   const { id } = await context.params
@@ -81,6 +91,11 @@ export async function DELETE(_request: Request, context: RouteContext) {
       { status: 500 },
     )
   }
+  void trackServerEvent("admin_action", {
+    resource: "course",
+    action: "delete",
+    courseId: id,
+  })
 
   return NextResponse.json({ ok: true })
 }

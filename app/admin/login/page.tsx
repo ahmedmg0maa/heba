@@ -29,10 +29,11 @@ export default function AdminLoginPage() {
         const result = await response.json()
         if (!result.configured) setSetupMode(true)
         if (result.authenticated) {
+          setError("")
           router.replace("/admin")
         }
       } catch {
-        // Keep login form visible on network errors
+        // keep login form visible on network errors
       }
     }
 
@@ -55,6 +56,7 @@ export default function AdminLoginPage() {
       if (!response.ok || !result.ok) {
         throw new Error(result.message || "تعذر تسجيل الدخول.")
       }
+      setError("")
       router.push("/admin")
       router.refresh()
     } catch (loginError) {
@@ -98,7 +100,10 @@ export default function AdminLoginPage() {
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(event) => setPassword(event.target.value)}
+                  onChange={(event) => {
+                    setPassword(event.target.value)
+                    if (error) setError("")
+                  }}
                   className="h-12 rounded-2xl bg-background pr-10"
                   placeholder="أدخلي كلمة مرور الإدارة"
                   required
@@ -107,7 +112,7 @@ export default function AdminLoginPage() {
             </div>
 
             <Button type="submit" className="h-12 w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
-              {loading ? "جاري الدخول..." : "دخول"}
+              {loading ? "جارٍ الدخول..." : "دخول"}
             </Button>
           </form>
         </div>

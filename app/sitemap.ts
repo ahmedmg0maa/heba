@@ -26,6 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/media",
     "/privacy",
     "/terms",
+    "/refund-policy",
     "/en",
   ]
 

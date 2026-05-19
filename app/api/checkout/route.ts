@@ -7,6 +7,8 @@ import {
 } from "@/lib/firebase/admin"
 import { getCatalogBookBySlug, getCatalogCourseBySlug } from "@/lib/catalog"
 import { enqueueNotification } from "@/lib/notifications"
+import { resolvePaymentProvider } from "@/lib/payments"
+import { trackServerEvent } from "@/lib/analytics"
 
 export const runtime = "nodejs"
 
@@ -43,7 +45,8 @@ export async function POST(request: Request) {
     const customerName = text(body.customerName || body.name)
     const email = text(body.email)
     const phone = text(body.phone)
-    const paymentMethod = text(body.paymentMethod) || "manual"
+    const requestedPaymentMethod = text(body.paymentMethod) || "manual"
+    const payment = resolvePaymentProvider(requestedPaymentMethod)
     const userId = text(body.userId)
 
     if (!productId || !productType || !customerName || !email || !phone) {
@@ -96,7 +99,10 @@ export async function POST(request: Request) {
       customerName,
       email,
       phone,
-      paymentMethod,
+      paymentMethod: requestedPaymentMethod,
+      paymentProvider: payment.provider,
+      paymentConfigured: payment.configured,
+      paymentMode: payment.mode,
       status: "pending",
       createdAt: now,
       updatedAt: now,
@@ -116,13 +122,23 @@ export async function POST(request: Request) {
       userId,
       email,
     })
+    void trackServerEvent("order_created", {
+      orderId: saved.id,
+      productId: resolvedProduct.id,
+      productType: resolvedProduct.type,
+      amount: resolvedProduct.price,
+      paymentProvider: payment.provider,
+      paymentConfigured: payment.configured,
+    })
 
     return NextResponse.json({
       ok: true,
       orderId: saved.id,
       orderNumber,
       status: "pending",
-      message: "تم إرسال الطلب بنجاح وهو قيد المراجعة.",
+      paymentProvider: payment.provider,
+      paymentConfigured: payment.configured,
+      message: payment.customerMessage,
     })
   } catch {
     return NextResponse.json({ ok: false, message: "تعذر إنشاء طلب الشراء." }, { status: 400 })

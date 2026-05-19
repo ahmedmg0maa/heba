@@ -101,6 +101,14 @@ export default async function AdminBookingsPage({ searchParams }: PageProps) {
         <h1 className="text-3xl font-black text-foreground">الحجوزات</h1>
         <p className="mt-2 text-muted-foreground">إدارة طلبات الحجز وتحديث الحالة مع بحث سريع وفلاتر التاريخ.</p>
         <p className="mt-3 text-sm font-bold text-primary">إجمالي النتائج: {filtered.length}</p>
+        <div className="mt-4">
+          <a
+            href="/api/admin/export/bookings"
+            className="inline-flex rounded-full border border-border px-4 py-2 text-sm font-bold text-foreground hover:border-primary hover:text-primary"
+          >
+            تصدير الحجوزات CSV
+          </a>
+        </div>
       </section>
 
       <section className="rounded-[2rem] border border-border bg-card p-4 shadow-sm sm:p-6">

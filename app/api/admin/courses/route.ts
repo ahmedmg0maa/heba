@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
-import { requireAdmin } from "@/lib/require-admin"
+import { requireAdmin } from "@/lib/admin-session"
 import { getDocument, getFirebaseAdminErrorMessage, listDocuments, setDocument } from "@/lib/firebase/admin"
+import { normalizeGoogleDriveCoverUrl, normalizeGoogleDriveResourceUrl } from "@/lib/google-drive"
+import { trackServerEvent } from "@/lib/analytics"
 
 export const runtime = "nodejs"
 
@@ -29,8 +31,9 @@ function toSlug(value: string) {
 }
 
 export async function GET() {
-  if (!(await requireAdmin())) {
-    return NextResponse.json({ ok: false, message: "غير مصرح." }, { status: 401 })
+  const admin = await requireAdmin()
+  if (!admin.ok) {
+    return NextResponse.json({ error: "غير مصرح" }, { status: 401 })
   }
 
   const courses = await listDocuments("courses", {
@@ -42,8 +45,9 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  if (!(await requireAdmin())) {
-    return NextResponse.json({ ok: false, message: "غير مصرح." }, { status: 401 })
+  const admin = await requireAdmin()
+  if (!admin.ok) {
+    return NextResponse.json({ error: "غير مصرح" }, { status: 401 })
   }
 
   let body: Record<string, unknown> = {}
@@ -73,11 +77,11 @@ export async function POST(request: Request) {
     description: asText(body.description),
     shortDescription: asText(body.shortDescription),
     price: asNumber(body.price),
-    coverImageUrl: asText(body.coverImageUrl),
+    coverImageUrl: normalizeGoogleDriveCoverUrl(asText(body.coverImageUrl)),
     status: asStatus(body.status),
     lessonsCount: asNumber(body.lessonsCount),
     duration: asText(body.duration),
-    accessUrl: asText(body.accessUrl),
+    accessUrl: normalizeGoogleDriveResourceUrl(asText(body.accessUrl)),
     createdAt: now,
     updatedAt: now,
   }
@@ -89,6 +93,12 @@ export async function POST(request: Request) {
       { status: 500 },
     )
   }
+  void trackServerEvent("admin_action", {
+    resource: "course",
+    action: "create",
+    courseId: id,
+    status: payload.status,
+  })
 
   return NextResponse.json({ ok: true, id })
 }

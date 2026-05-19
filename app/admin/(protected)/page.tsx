@@ -8,6 +8,30 @@ function numberValue(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
+function isoDate(value: unknown) {
+  const date = new Date(String(value || ""))
+  if (Number.isNaN(date.getTime())) return null
+  return date
+}
+
+function isTodayInCairo(value: unknown) {
+  const date = isoDate(value)
+  if (!date) return false
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Cairo" }).format(new Date())
+  const target = new Intl.DateTimeFormat("en-CA", { timeZone: "Africa/Cairo" }).format(date)
+  return today === target
+}
+
+function formatDateTimeAr(value: unknown) {
+  const date = isoDate(value)
+  if (!date) return "-"
+  return new Intl.DateTimeFormat("ar-EG", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Africa/Cairo",
+  }).format(date)
+}
+
 export default async function AdminDashboardPage() {
   const [bookings, orders, messages, courses, books] = await Promise.all([
     listDocuments("bookings", { orderByField: "createdAt", orderDirection: "desc", limit: 1000 }),
@@ -19,30 +43,27 @@ export default async function AdminDashboardPage() {
 
   const paidOrders = orders.filter((item) => String(item.status || "").toLowerCase() === "paid")
   const pendingOrders = orders.filter((item) => String(item.status || "").toLowerCase() === "pending")
+  const pendingBookings = bookings.filter((item) => String(item.status || "").toLowerCase() === "pending")
+  const todayBookings = bookings.filter((item) => isTodayInCairo(item.createdAt))
   const revenue = paidOrders.reduce((sum, item) => sum + numberValue(item.amount), 0)
+  const recentOrders = orders.slice(0, 6)
+  const recentBookings = bookings.slice(0, 6)
 
   const stats = [
-    { name: "الحجوزات", value: bookings.length, note: "إجمالي الحجوزات", icon: Calendar },
-    { name: "الطلبات", value: orders.length, note: `${pendingOrders.length} قيد المراجعة`, icon: ShoppingCart },
+    { name: "إجمالي الحجوزات", value: bookings.length, note: "كل الحجوزات المسجلة", icon: Calendar },
+    { name: "حجوزات قيد المراجعة", value: pendingBookings.length, note: "تحتاج متابعة", icon: Calendar },
+    { name: "طلبات قيد المراجعة", value: pendingOrders.length, note: "بانتظار تأكيد الدفع", icon: ShoppingCart },
+    { name: "طلبات مدفوعة", value: paidOrders.length, note: "تم تفعيلها", icon: ShoppingCart },
+    { name: "إيراد تقديري", value: `${revenue.toLocaleString("ar-EG")} EGP`, note: "من الطلبات المدفوعة", icon: TrendingUp },
+    { name: "حجوزات اليوم", value: todayBookings.length, note: "حسب توقيت القاهرة", icon: Calendar },
     { name: "الرسائل", value: messages.length, note: "رسائل العملاء", icon: MessageSquare },
-    { name: "الإيرادات المدفوعة", value: `${revenue.toLocaleString("en-US")} EGP`, note: "طلبات paid فقط", icon: TrendingUp },
   ]
 
   return (
     <div className="space-y-8" dir="rtl">
       <div className="rounded-[2rem] bg-primary p-6 text-primary-foreground shadow-xl">
         <h1 className="text-3xl font-black">لوحة إدارة المنصة</h1>
-        <p className="mt-2 text-primary-foreground/75">إحصاءات حيّة للحجوزات والطلبات والرسائل والمنتجات.</p>
-        <div className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
-          <h2 className="text-2xl font-black">سجل الوصول</h2>
-          <p className="mt-2 text-sm text-muted-foreground">مراجعة الوصول للمحتوى المدفوع والأنشطة المشبوهة.</p>
-          <Link href="/admin/access" className="mt-5 inline-flex">
-            <Button className="rounded-full">
-              <Eye className="h-4 w-4" />
-              فتح السجل
-            </Button>
-          </Link>
-        </div>
+        <p className="mt-2 text-primary-foreground/80">متابعة فورية للحجوزات والطلبات والمنتجات والنشاط اليومي.</p>
       </div>
 
       <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
@@ -59,14 +80,14 @@ export default async function AdminDashboardPage() {
       <div className="grid gap-6 lg:grid-cols-5">
         <div className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
           <h2 className="text-2xl font-black">الحجوزات</h2>
-          <p className="mt-2 text-sm text-muted-foreground">إدارة المواعيد وحالات الحجز.</p>
+          <p className="mt-2 text-sm text-muted-foreground">إدارة المواعيد وتحديث الحالات.</p>
           <Link href="/admin/bookings" className="mt-5 inline-flex">
             <Button className="rounded-full">فتح الحجوزات</Button>
           </Link>
         </div>
         <div className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
           <h2 className="text-2xl font-black">الطلبات</h2>
-          <p className="mt-2 text-sm text-muted-foreground">مراجعة الطلبات وتحديث الدفع.</p>
+          <p className="mt-2 text-sm text-muted-foreground">مراجعة الطلبات وتحديث حالة الدفع.</p>
           <Link href="/admin/orders" className="mt-5 inline-flex">
             <Button className="rounded-full">فتح الطلبات</Button>
           </Link>
@@ -92,12 +113,51 @@ export default async function AdminDashboardPage() {
           </Link>
         </div>
         <div className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
-          <h2 className="text-2xl font-black">الرسائل</h2>
-          <p className="mt-2 text-sm text-muted-foreground">متابعة رسائل الزوار الواردة.</p>
-          <Link href="/admin/messages" className="mt-5 inline-flex">
-            <Button className="rounded-full">فتح الرسائل</Button>
+          <h2 className="text-2xl font-black">سجل الوصول</h2>
+          <p className="mt-2 text-sm text-muted-foreground">مراجعة الوصول للمحتوى المدفوع.</p>
+          <Link href="/admin/access" className="mt-5 inline-flex">
+            <Button className="rounded-full">
+              <Eye className="h-4 w-4" />
+              فتح السجل
+            </Button>
           </Link>
         </div>
+      </div>
+
+      <div className="grid gap-6 xl:grid-cols-2">
+        <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-2xl font-black">أحدث الطلبات</h2>
+          <div className="mt-4 space-y-3">
+            {recentOrders.length === 0 ? (
+              <p className="text-muted-foreground">لا توجد طلبات بعد.</p>
+            ) : (
+              recentOrders.map((order) => (
+                <article key={String(order.id)} className="rounded-2xl border border-border bg-background p-4">
+                  <p className="font-bold text-foreground">{String(order.productTitle || "-")}</p>
+                  <p className="text-xs text-muted-foreground">{String(order.customerName || order.email || "-")}</p>
+                  <p className="text-xs text-muted-foreground">{formatDateTimeAr(order.createdAt)}</p>
+                </article>
+              ))
+            )}
+          </div>
+        </section>
+
+        <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
+          <h2 className="text-2xl font-black">أحدث الحجوزات</h2>
+          <div className="mt-4 space-y-3">
+            {recentBookings.length === 0 ? (
+              <p className="text-muted-foreground">لا توجد حجوزات بعد.</p>
+            ) : (
+              recentBookings.map((booking) => (
+                <article key={String(booking.id)} className="rounded-2xl border border-border bg-background p-4">
+                  <p className="font-bold text-foreground">{String(booking.customerName || "-")}</p>
+                  <p className="text-xs text-muted-foreground">{String(booking.phone || booking.email || "-")}</p>
+                  <p className="text-xs text-muted-foreground">{formatDateTimeAr(booking.createdAt)}</p>
+                </article>
+              ))
+            )}
+          </div>
+        </section>
       </div>
     </div>
   )

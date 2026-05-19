@@ -41,6 +41,14 @@ export default async function AdminOrdersPage() {
       <div className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
         <h1 className="text-3xl font-black text-foreground">الطلبات</h1>
         <p className="mt-2 text-muted-foreground">تحديث حالة الطلبات وربط التفعيل في حساب المستخدم.</p>
+        <div className="mt-4">
+          <a
+            href="/api/admin/export/orders"
+            className="inline-flex rounded-full border border-border px-4 py-2 text-sm font-bold text-foreground hover:border-primary hover:text-primary"
+          >
+            تصدير الطلبات CSV
+          </a>
+        </div>
       </div>
 
       <div className="overflow-x-auto rounded-[2rem] border border-border bg-card shadow-sm">

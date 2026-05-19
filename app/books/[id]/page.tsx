@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { getCatalogBookBySlug } from "@/lib/catalog"
+import { ViewProductTrack } from "@/components/analytics/view-product-track"
 
 type PageProps = { params: Promise<{ id: string }> }
 
@@ -49,6 +50,7 @@ export default async function BookDetailsPage({ params }: PageProps) {
     <>
       <Header />
       <main dir="rtl">
+        <ViewProductTrack productId={book.id} productType="book" price={book.price} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(bookSchema) }} />
         <section className="pt-20 section-padding soft-gradient sm:pt-24">
           <div className="container-brand grid gap-10 lg:grid-cols-[1fr_0.42fr] lg:items-start">

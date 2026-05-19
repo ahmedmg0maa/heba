@@ -5,6 +5,7 @@ import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { getDocument } from "@/lib/firebase/admin"
+import { buildWhatsAppUrl } from "@/lib/support"
 
 export const metadata: Metadata = {
   title: "تم إرسال الطلب",
@@ -25,6 +26,8 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
   const { orderId } = await searchParams
   const order = orderId ? await getDocument("orders", orderId) : null
   const statusLabel = mapStatus(String(order?.status || "pending"))
+  const orderNumber = String(order?.orderNumber || orderId || "-")
+  const whatsappUrl = buildWhatsAppUrl(`مرحبًا، لدي استفسار بخصوص الطلب رقم ${orderNumber}.`)
 
   return (
     <>
@@ -35,16 +38,19 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
             <div className="mx-auto max-w-3xl rounded-[2.5rem] border border-border bg-card p-8 text-center shadow-xl md:p-12">
               <CheckCircle2 className="mx-auto h-16 w-16 text-primary" />
               <p className="eyebrow mt-6">تم استلام الطلب</p>
-              <h1 className="mt-3 text-4xl font-black text-foreground sm:text-5xl">تم إرسال الطلب بنجاح وهو قيد المراجعة.</h1>
+              <h1 className="mt-3 text-4xl font-black text-foreground sm:text-5xl">تم إرسال الطلب بنجاح وهو قيد المراجعة</h1>
               <p className="mx-auto mt-4 max-w-2xl leading-8 text-muted-foreground">
-                حالة الطلب الحالية: <strong>{statusLabel}</strong>. سيتم اعتماد المنتج بعد تأكيد الدفع.
+                حالة الطلب الحالية: <strong>{statusLabel}</strong>.
+              </p>
+              <p className="mx-auto mt-2 max-w-2xl text-sm font-bold text-primary">
+                طلبك قيد المراجعة وسيتم تفعيل الوصول بعد تأكيد الدفع.
               </p>
 
               <div className="mt-8 rounded-[2rem] border border-border bg-background p-5 text-right">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <div className="rounded-2xl bg-muted p-4">
                     <p className="text-xs text-muted-foreground">رقم الطلب</p>
-                    <p className="mt-1 font-black text-foreground">{String(order?.orderNumber || orderId || "-")}</p>
+                    <p className="mt-1 font-black text-foreground">{orderNumber}</p>
                   </div>
                   <div className="rounded-2xl bg-muted p-4">
                     <p className="text-xs text-muted-foreground">حالة الطلب</p>
@@ -74,6 +80,13 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
                     متابعة التصفح
                   </Button>
                 </Link>
+                {whatsappUrl ? (
+                  <a href={whatsappUrl} target="_blank" rel="noreferrer">
+                    <Button variant="outline" className="rounded-full bg-transparent">
+                      دعم واتساب
+                    </Button>
+                  </a>
+                ) : null}
               </div>
             </div>
           </div>

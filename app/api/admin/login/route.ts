@@ -1,21 +1,34 @@
+import { timingSafeEqual } from "node:crypto"
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import {
-  ADMIN_SESSION_COOKIE,
-  ADMIN_SESSION_MAX_AGE_SECONDS,
-  createAdminSessionToken,
-  hasConfiguredAdminPassword,
-  isValidAdminPassword,
-} from "@/lib/admin-auth"
+import { ADMIN_COOKIE_NAME, createAdminSession, requireAdmin } from "@/lib/admin-session"
 
 export const runtime = "nodejs"
 
+const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7
 const MAX_ATTEMPTS = 6
 const WINDOW_MS = 10 * 60 * 1000
 const loginAttempts = new Map<string, number[]>()
 
 function text(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
+}
+
+function getConfiguredAdminPassword() {
+  return (process.env.ADMIN_PASSWORD || "").trim()
+}
+
+function safeEqual(a: string, b: string) {
+  const aBuffer = Buffer.from(a)
+  const bBuffer = Buffer.from(b)
+  if (aBuffer.length !== bBuffer.length) return false
+  return timingSafeEqual(aBuffer, bBuffer)
+}
+
+function isValidAdminPassword(password: string) {
+  const configured = getConfiguredAdminPassword()
+  if (!configured) return false
+  return safeEqual(configured, password.trim())
 }
 
 function getClientIp(request: Request) {
@@ -50,7 +63,12 @@ function clearFailures(ip: string) {
 }
 
 export async function POST(request: Request) {
-  if (!hasConfiguredAdminPassword()) {
+  const admin = await requireAdmin()
+  if (admin.ok) {
+    return NextResponse.json({ ok: true })
+  }
+
+  if (!getConfiguredAdminPassword()) {
     return NextResponse.json({ ok: false, message: "لم يتم تفعيل لوحة الإدارة بعد." }, { status: 503 })
   }
 
@@ -77,20 +95,20 @@ export async function POST(request: Request) {
 
   clearFailures(ip)
 
-  const sessionToken = createAdminSessionToken()
-  if (!sessionToken) {
+  const session = await createAdminSession()
+  if (!session.ok || !session.token) {
     return NextResponse.json({ ok: false, message: "تعذر تهيئة جلسة الإدارة. راجعي إعدادات الخادم." }, { status: 503 })
   }
 
   const cookieStore = await cookies()
   cookieStore.delete({
-    name: ADMIN_SESSION_COOKIE,
-    path: "/admin",
+    name: ADMIN_COOKIE_NAME,
+    path: "/",
   })
-  cookieStore.set(ADMIN_SESSION_COOKIE, sessionToken, {
+  cookieStore.set(ADMIN_COOKIE_NAME, session.token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
   })

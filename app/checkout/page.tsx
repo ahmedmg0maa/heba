@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { getFirebaseClientAuth } from "@/lib/firebase/client"
+import { trackClientEvent } from "@/lib/analytics"
 
 type Product = {
   id: string
@@ -45,6 +46,16 @@ export default function CheckoutPage() {
     () => products.find((product) => makeKey(product) === productKey) ?? products[0],
     [productKey, products],
   )
+
+  useEffect(() => {
+    if (!selectedProduct) return
+    trackClientEvent("view_product", {
+      productId: selectedProduct.id,
+      productType: selectedProduct.type,
+      price: selectedProduct.price,
+      source: "checkout",
+    })
+  }, [selectedProduct])
 
   useEffect(() => {
     const auth = getFirebaseClientAuth()
@@ -129,6 +140,12 @@ export default function CheckoutPage() {
       paymentMethod,
       userId,
     }
+    trackClientEvent("start_checkout", {
+      productId: selectedProduct.id,
+      productType: selectedProduct.type,
+      amount: selectedProduct.price,
+      paymentMethod,
+    })
 
     try {
       const response = await fetch("/api/checkout", {
@@ -253,7 +270,6 @@ export default function CheckoutPage() {
                       <SelectContent>
                         <SelectItem value="manual">تحويل أو تأكيد يدوي</SelectItem>
                         <SelectItem value="paymob">Paymob</SelectItem>
-                        <SelectItem value="stripe">Stripe</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

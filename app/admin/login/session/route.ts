@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server"
-import { hasConfiguredAdminPassword } from "@/lib/admin-auth"
-import { requireAdmin } from "@/lib/require-admin"
+import { requireAdmin } from "@/lib/admin-session"
 
 export const runtime = "nodejs"
 
 export async function GET() {
+  const admin = await requireAdmin()
   return NextResponse.json({
     ok: true,
-    configured: hasConfiguredAdminPassword(),
-    authenticated: await requireAdmin(),
+    configured: Boolean((process.env.ADMIN_PASSWORD || "").trim()),
+    authenticated: admin.ok,
+    reason: admin.reason,
   })
 }

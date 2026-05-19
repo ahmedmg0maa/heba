@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto"
 import { extname } from "node:path"
 import { NextResponse } from "next/server"
+import { requireAdmin } from "@/lib/admin-session"
 import { getFirebaseStorageBucket, isFirebaseConfigured } from "@/lib/firebase/admin"
-import { requireAdmin } from "@/lib/require-admin"
+import { trackServerEvent } from "@/lib/analytics"
 
 export const runtime = "nodejs"
 
@@ -29,8 +30,9 @@ function extensionFrom(file: File) {
 }
 
 export async function POST(request: Request) {
-  if (!(await requireAdmin())) {
-    return NextResponse.json({ ok: false, message: "غير مصرح." }, { status: 401 })
+  const admin = await requireAdmin()
+  if (!admin.ok) {
+    return NextResponse.json({ error: "غير مصرح" }, { status: 401 })
   }
 
   if (!isFirebaseConfigured()) {
@@ -87,6 +89,15 @@ export async function POST(request: Request) {
 
     const fileUrl = `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodeURIComponent(objectPath)}?alt=media&token=${token}`
     const secureUrl = `gs://${bucket.name}/${objectPath}`
+    void trackServerEvent("admin_action", {
+      resource: "upload",
+      action: "create",
+      folder,
+      entityId,
+      contentType: fileField.type || "application/octet-stream",
+      size: fileField.size,
+    })
+
     return NextResponse.json({
       ok: true,
       url: fileUrl,

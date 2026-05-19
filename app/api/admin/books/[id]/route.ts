@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server"
 import { deleteDocument, getFirebaseAdminErrorMessage, setDocument } from "@/lib/firebase/admin"
-import { requireAdmin } from "@/lib/require-admin"
+import { requireAdmin } from "@/lib/admin-session"
+import { normalizeGoogleDriveCoverUrl, normalizeGoogleDriveResourceUrl } from "@/lib/google-drive"
+import { trackServerEvent } from "@/lib/analytics"
 
 type RouteContext = { params: Promise<{ id: string }> }
+
 export const runtime = "nodejs"
 
 function asText(value: unknown) {
@@ -21,8 +24,9 @@ function asStatus(value: unknown): "active" | "draft" | "hidden" {
 }
 
 export async function PATCH(request: Request, context: RouteContext) {
-  if (!(await requireAdmin())) {
-    return NextResponse.json({ ok: false, message: "غير مصرح." }, { status: 401 })
+  const admin = await requireAdmin()
+  if (!admin.ok) {
+    return NextResponse.json({ error: "غير مصرح" }, { status: 401 })
   }
 
   const { id } = await context.params
@@ -43,8 +47,8 @@ export async function PATCH(request: Request, context: RouteContext) {
   if ("description" in body) payload.description = asText(body.description)
   if ("shortDescription" in body) payload.shortDescription = asText(body.shortDescription)
   if ("price" in body) payload.price = asNumber(body.price)
-  if ("coverImageUrl" in body) payload.coverImageUrl = asText(body.coverImageUrl)
-  if ("fileUrl" in body) payload.fileUrl = asText(body.fileUrl)
+  if ("coverImageUrl" in body) payload.coverImageUrl = normalizeGoogleDriveCoverUrl(asText(body.coverImageUrl))
+  if ("fileUrl" in body) payload.fileUrl = normalizeGoogleDriveResourceUrl(asText(body.fileUrl))
   if ("status" in body) payload.status = asStatus(body.status)
 
   if (Object.keys(payload).length === 0) {
@@ -58,13 +62,19 @@ export async function PATCH(request: Request, context: RouteContext) {
       { status: 500 },
     )
   }
+  void trackServerEvent("admin_action", {
+    resource: "book",
+    action: "update",
+    bookId: id,
+  })
 
   return NextResponse.json({ ok: true })
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
-  if (!(await requireAdmin())) {
-    return NextResponse.json({ ok: false, message: "غير مصرح." }, { status: 401 })
+  const admin = await requireAdmin()
+  if (!admin.ok) {
+    return NextResponse.json({ error: "غير مصرح" }, { status: 401 })
   }
 
   const { id } = await context.params
@@ -79,6 +89,11 @@ export async function DELETE(_request: Request, context: RouteContext) {
       { status: 500 },
     )
   }
+  void trackServerEvent("admin_action", {
+    resource: "book",
+    action: "delete",
+    bookId: id,
+  })
 
   return NextResponse.json({ ok: true })
 }

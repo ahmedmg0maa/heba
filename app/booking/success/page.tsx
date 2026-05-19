@@ -4,6 +4,7 @@ import { CalendarCheck2, MessageCircle, WalletCards } from "lucide-react"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
+import { buildWhatsAppUrl } from "@/lib/support"
 
 type PageProps = {
   searchParams: Promise<{ bookingId?: string; status?: string }>
@@ -23,6 +24,7 @@ function statusLabel(status: string) {
 
 export default async function BookingSuccessPage({ searchParams }: PageProps) {
   const { bookingId = "", status = "pending" } = await searchParams
+  const whatsappUrl = buildWhatsAppUrl(`مرحبًا، لدي استفسار بخصوص الحجز رقم ${bookingId || "-"}.`)
 
   return (
     <>
@@ -64,6 +66,13 @@ export default async function BookingSuccessPage({ searchParams }: PageProps) {
                     تواصل مع الدعم
                   </Button>
                 </Link>
+                {whatsappUrl ? (
+                  <a href={whatsappUrl} target="_blank" rel="noreferrer">
+                    <Button variant="outline" className="rounded-full bg-transparent">
+                      دعم واتساب
+                    </Button>
+                  </a>
+                ) : null}
               </div>
             </div>
           </div>
