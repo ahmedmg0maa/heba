@@ -1,8 +1,8 @@
 import "server-only"
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto"
-import { ADMIN_SESSION_COOKIE, ADMIN_SESSION_MAX_AGE_SECONDS } from "@/lib/admin-session"
 
-export { ADMIN_SESSION_COOKIE, ADMIN_SESSION_MAX_AGE_SECONDS }
+export const ADMIN_SESSION_COOKIE = "admin-auth"
+export const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 12
 
 type SessionPayload = {
   iat: number
@@ -30,9 +30,7 @@ export function getConfiguredAdminPassword() {
 }
 
 export function getAdminSessionSecret() {
-  const customSecret = (process.env.ADMIN_SESSION_SECRET || "").trim()
-  if (customSecret) return customSecret
-  return getConfiguredAdminPassword()
+  return (process.env.ADMIN_SESSION_SECRET || "").trim()
 }
 
 export function hasConfiguredAdminPassword() {

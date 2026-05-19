@@ -244,12 +244,25 @@ async function logProtectedAccess(options: {
   productId: string
   productType: ProtectedProductType
   orderId: string
+  action: "stream" | "download" | "deny"
   allowed: boolean
   reason?: string
   suspicious?: boolean
   deviceHash?: string
 }) {
-  const { request, userId, email, productId, productType, orderId, allowed, reason = "", suspicious = false, deviceHash = "" } = options
+  const {
+    request,
+    userId,
+    email,
+    productId,
+    productType,
+    orderId,
+    action,
+    allowed,
+    reason = "",
+    suspicious = false,
+    deviceHash = "",
+  } = options
   const ip = getClientIp(request)
   const userAgent = text(request.headers.get("user-agent"))
   const nowIso = new Date().toISOString()
@@ -259,6 +272,7 @@ async function logProtectedAccess(options: {
     productId,
     productType,
     orderId,
+    action,
     timestamp: nowIso,
     ip,
     userAgent,
@@ -321,6 +335,7 @@ export async function resolveProtectedContentAccess(options: ResolveOptions): Pr
       productId: normalizedProductId,
       productType,
       orderId: "",
+      action: "deny",
       allowed: false,
       reason: "no_paid_ownership",
       suspicious: true,
@@ -345,6 +360,7 @@ export async function resolveProtectedContentAccess(options: ResolveOptions): Pr
       productId: normalizedProductId,
       productType,
       orderId: String(order.id),
+      action: "deny",
       allowed: false,
       reason: "device_limit_reached",
       suspicious: true,
@@ -363,6 +379,7 @@ export async function resolveProtectedContentAccess(options: ResolveOptions): Pr
       productId: normalizedProductId,
       productType,
       orderId: String(order.id),
+      action: "deny",
       allowed: false,
       reason: "product_not_found",
       suspicious: true,
@@ -380,12 +397,13 @@ export async function resolveProtectedContentAccess(options: ResolveOptions): Pr
       productId: normalizedProductId,
       productType,
       orderId: String(order.id),
+      action: "deny",
       allowed: false,
       reason: "missing_resource_url",
       suspicious: true,
       deviceHash,
     })
-    return { ok: false, status: 404, message: "المحتوى غير متاح بعد. تواصل مع الدعم." }
+    return { ok: false, status: 404, message: "سيتم تفعيل الوصول قريبًا، ويمكنك التواصل مع الدعم." }
   }
 
   const bucket = getFirebaseStorageBucket()
@@ -416,12 +434,13 @@ export async function resolveProtectedContentAccess(options: ResolveOptions): Pr
       productId: normalizedProductId,
       productType,
       orderId: String(order.id),
+      action: "deny",
       allowed: false,
       reason: "insecure_or_unrecognized_storage_url",
       suspicious: true,
       deviceHash,
     })
-    return { ok: false, status: 503, message: "المحتوى غير مهيأ بطريقة آمنة. يرجى التواصل مع الدعم." }
+    return { ok: false, status: 503, message: "سيتم تفعيل الوصول قريبًا، ويمكنك التواصل مع الدعم." }
   }
 
   const recentAccessCount = await countRecentAccesses(userId, productType, normalizedProductId)
@@ -434,6 +453,7 @@ export async function resolveProtectedContentAccess(options: ResolveOptions): Pr
     productId: normalizedProductId,
     productType,
     orderId: String(order.id),
+    action: mode === "download" ? "download" : "stream",
     allowed: true,
     reason: signedUrl === resourceUrl ? "external_source" : "signed_url",
     suspicious,
@@ -451,4 +471,3 @@ export async function resolveProtectedContentAccess(options: ResolveOptions): Pr
     ownership: { orderId: String(order.id) },
   }
 }
-
