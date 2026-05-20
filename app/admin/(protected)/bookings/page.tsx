@@ -1,5 +1,7 @@
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { BookingStatusSelect } from "@/components/admin/booking-status-select"
+import { requireAdmin } from "@/lib/admin-session"
 import { isFirebaseConfigured, listDocuments } from "@/lib/firebase/admin"
 
 type PageProps = {
@@ -57,6 +59,18 @@ function mapStatus(status: string) {
 }
 
 export default async function AdminBookingsPage({ searchParams }: PageProps) {
+  const admin = await requireAdmin()
+  if (!admin.ok) {
+    if (process.env.NODE_ENV === "development") {
+      console.info("[admin-page-auth]", { page: "/admin/bookings", ok: false, reason: admin.reason })
+    }
+    redirect("/admin/login")
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    console.info("[admin-page-auth]", { page: "/admin/bookings", ok: true, reason: admin.reason })
+  }
+
   const { from = "", to = "", status = "all", q = "" } = await searchParams
   const search = q.trim().toLowerCase()
 

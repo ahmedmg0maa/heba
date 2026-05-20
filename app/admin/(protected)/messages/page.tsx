@@ -1,3 +1,5 @@
+import { redirect } from "next/navigation"
+import { requireAdmin } from "@/lib/admin-session"
 import { listDocuments } from "@/lib/firebase/admin"
 
 function parseDate(value: unknown) {
@@ -12,6 +14,18 @@ function formatDateTime(value: unknown) {
 }
 
 export default async function AdminMessagesPage() {
+  const admin = await requireAdmin()
+  if (!admin.ok) {
+    if (process.env.NODE_ENV === "development") {
+      console.info("[admin-page-auth]", { page: "/admin/messages", ok: false, reason: admin.reason })
+    }
+    redirect("/admin/login")
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    console.info("[admin-page-auth]", { page: "/admin/messages", ok: true, reason: admin.reason })
+  }
+
   const messages = await listDocuments("messages", {
     orderByField: "createdAt",
     orderDirection: "desc",

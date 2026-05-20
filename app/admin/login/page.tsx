@@ -119,7 +119,11 @@ export default function AdminLoginPage() {
               </div>
             </div>
 
-            <Button type="submit" className="h-12 w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
+            <Button
+              type="submit"
+              disabled={loading}
+              className="h-12 w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
+            >
               {loading ? "جارٍ الدخول..." : "دخول"}
             </Button>
           </form>

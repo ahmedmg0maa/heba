@@ -1,6 +1,8 @@
 import Link from "next/link"
+import { redirect } from "next/navigation"
 import { BookOpen, Calendar, Eye, Layers3, MessageSquare, ShoppingCart, TrendingUp } from "lucide-react"
 import { listDocuments } from "@/lib/firebase/admin"
+import { requireAdmin } from "@/lib/admin-session"
 import { Button } from "@/components/ui/button"
 
 function numberValue(value: unknown) {
@@ -33,6 +35,18 @@ function formatDateTimeAr(value: unknown) {
 }
 
 export default async function AdminDashboardPage() {
+  const admin = await requireAdmin()
+  if (!admin.ok) {
+    if (process.env.NODE_ENV === "development") {
+      console.info("[admin-page-auth]", { page: "/admin", ok: false, reason: admin.reason })
+    }
+    redirect("/admin/login")
+  }
+
+  if (process.env.NODE_ENV === "development") {
+    console.info("[admin-page-auth]", { page: "/admin", ok: true, reason: admin.reason })
+  }
+
   const [bookings, orders, messages, courses, books] = await Promise.all([
     listDocuments("bookings", { orderByField: "createdAt", orderDirection: "desc", limit: 1000 }),
     listDocuments("orders", { orderByField: "createdAt", orderDirection: "desc", limit: 1000 }),
@@ -115,7 +129,7 @@ export default async function AdminDashboardPage() {
         <div className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
           <h2 className="text-2xl font-black">سجل الوصول</h2>
           <p className="mt-2 text-sm text-muted-foreground">مراجعة الوصول للمحتوى المدفوع.</p>
-          <Link href="/admin/access" className="mt-5 inline-flex">
+          <Link href="/admin/access-logs" className="mt-5 inline-flex">
             <Button className="rounded-full">
               <Eye className="h-4 w-4" />
               فتح السجل
