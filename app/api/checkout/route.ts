@@ -16,6 +16,10 @@ function text(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
 }
 
+function normalizeEmail(value: unknown) {
+  return text(value).toLowerCase()
+}
+
 function makeOrderNumber() {
   const random = Math.floor(Math.random() * 9000 + 1000)
   return `HB-${new Date().getFullYear()}-${random}`
@@ -41,9 +45,9 @@ export async function POST(request: Request) {
   try {
     const body = await request.json()
     const productId = text(body.productId)
-    const productType = text(body.productType)
+    const productType = text(body.productType).toLowerCase()
     const customerName = text(body.customerName || body.name)
-    const email = text(body.email)
+    const email = normalizeEmail(body.email)
     const phone = text(body.phone)
     const requestedPaymentMethod = text(body.paymentMethod) || "manual"
     const payment = resolvePaymentProvider(requestedPaymentMethod)

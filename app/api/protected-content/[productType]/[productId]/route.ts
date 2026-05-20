@@ -37,13 +37,13 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
   const { productType, productId } = await context.params
   const normalizedType = text(productType).toLowerCase() as ProtectedProductType
-
   if (normalizedType !== "book" && normalizedType !== "course") {
     return NextResponse.json({ ok: false, message: "نوع المحتوى غير مدعوم." }, { status: 400 })
   }
 
   const mode = text(request.nextUrl.searchParams.get("mode")).toLowerCase() === "download" ? "download" : "stream"
   const token = parseToken(request)
+
   const resolved = await resolveProtectedContentAccess({
     request,
     idToken: token,

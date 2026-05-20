@@ -12,7 +12,7 @@ import {
   updateProfile,
   type User,
 } from "firebase/auth"
-import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from "firebase/firestore"
+import { doc, setDoc, updateDoc } from "firebase/firestore"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
@@ -22,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getFirebaseClientAuth, getFirebaseClientDb, hasFirebasePublicConfig } from "@/lib/firebase/client"
 import { buildWhatsAppUrl } from "@/lib/support"
 
-type AccountUser = {
+type AccountProfile = {
   uid: string
   name: string
   email: string
@@ -32,11 +32,11 @@ type AccountUser = {
 
 type UserOrder = {
   id: string
-  orderNumber?: string
-  productType: "course" | "book" | string
+  orderNumber: string
+  productType: string
   productId: string
-  productSlug?: string
   itemId?: string
+  productSlug?: string
   productTitle: string
   amount: number
   status: string
@@ -56,14 +56,22 @@ type UserBooking = {
   createdAt?: string
 }
 
-function toISODate(value: unknown) {
-  if (!value) return ""
-  if (typeof value === "object" && value !== null && "toDate" in value && typeof value.toDate === "function") {
-    const date = value.toDate() as Date
-    return Number.isNaN(date.getTime()) ? "" : date.toISOString()
-  }
-  const d = new Date(String(value))
-  return Number.isNaN(d.getTime()) ? "" : d.toISOString()
+type AccountSummaryResponse = {
+  ok: boolean
+  message?: string
+  profile?: AccountProfile
+  orders?: UserOrder[]
+  bookings?: UserBooking[]
+  paidBooks?: UserOrder[]
+  paidCourses?: UserOrder[]
+}
+
+function text(value: unknown) {
+  return typeof value === "string" ? value.trim() : ""
+}
+
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase()
 }
 
 function toNumber(value: unknown) {
@@ -71,28 +79,15 @@ function toNumber(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
-function resolveAccountName(user: User, storedName?: unknown) {
-  const fromDoc = typeof storedName === "string" ? storedName.trim() : ""
-  if (fromDoc) return fromDoc
-
-  const fromAuth = typeof user.displayName === "string" ? user.displayName.trim() : ""
-  if (fromAuth) return fromAuth
-
-  const fromEmail = typeof user.email === "string" ? user.email.trim() : ""
-  if (fromEmail) return fromEmail
-
-  return user.uid
+function orderStatusLabel(status: string) {
+  if (status === "paid") return "مدفوع"
+  if (status === "cancelled") return "ملغي"
+  return "قيد المراجعة"
 }
 
 function bookingStatusLabel(status: string) {
   if (status === "approved") return "تم قبول الحجز"
   if (status === "completed") return "تمت الجلسة"
-  if (status === "cancelled") return "ملغي"
-  return "قيد المراجعة"
-}
-
-function orderStatusLabel(status: string) {
-  if (status === "paid") return "مدفوع"
   if (status === "cancelled") return "ملغي"
   return "قيد المراجعة"
 }
@@ -103,77 +98,26 @@ function orderTypeLabel(type: string) {
   return "منتج"
 }
 
-function sortByCreatedAtDesc<T extends { createdAt?: string }>(items: T[]) {
-  return [...items].sort((a, b) => toISODate(b.createdAt).localeCompare(toISODate(a.createdAt)))
-}
-
-function mergeById<T extends { id: string }>(first: T[], second: T[]) {
-  const map = new Map<string, T>()
-  for (const item of [...first, ...second]) map.set(item.id, item)
-  return Array.from(map.values())
-}
-
-function resolvePaidBookId(order: UserOrder, keyToBookId: Record<string, string>) {
-  const itemId = String(order.itemId || "").trim()
-  if (itemId) return itemId
-
-  const productId = String(order.productId || "").trim()
-  if (productId && keyToBookId[productId]) return keyToBookId[productId]
-  if (productId) return productId
-
-  const productSlug = String(order.productSlug || "").trim()
-  if (productSlug && keyToBookId[productSlug]) return keyToBookId[productSlug]
-  if (productSlug) return productSlug
-
-  return ""
-}
-
-function mapOrdersFromSnapshot(snapshot: Awaited<ReturnType<typeof getDocs>>) {
-  return snapshot.docs.map((item) => {
-    const data = item.data() as Record<string, unknown>
-    return {
-      id: item.id,
-      orderNumber: String(data.orderNumber || ""),
-      productType: String(data.productType || "").toLowerCase(),
-      productId: String(data.productId || "").trim(),
-      productSlug: String(data.productSlug || "").trim(),
-      itemId: String(data.itemId || "").trim(),
-      productTitle: String(data.productTitle || ""),
-      amount: toNumber(data.amount),
-      status: String(data.status || "pending").toLowerCase(),
-      createdAt: toISODate(data.createdAt),
-    } as UserOrder
-  })
-}
-
-function mapBookingsFromSnapshot(snapshot: Awaited<ReturnType<typeof getDocs>>) {
-  return snapshot.docs.map((item) => {
-    const data = item.data() as Record<string, unknown>
-    return {
-      id: item.id,
-      customerName: String(data.customerName || ""),
-      email: String(data.email || ""),
-      phone: String(data.phone || ""),
-      duration: toNumber(data.duration) || 60,
-      amount: toNumber(data.amount),
-      status: String(data.status || "pending").toLowerCase(),
-      date: String(data.date || ""),
-      time: String(data.time || ""),
-      createdAt: toISODate(data.createdAt),
-    } as UserBooking
-  })
+function resolveAccountName(user: User, profileName?: string) {
+  const nameFromProfile = text(profileName)
+  if (nameFromProfile) return nameFromProfile
+  const authName = text(user.displayName)
+  if (authName) return authName
+  const email = text(user.email)
+  if (email) return email
+  return user.uid
 }
 
 export default function AccountPage() {
   const [authReady, setAuthReady] = useState(false)
   const [currentUser, setCurrentUser] = useState<User | null>(null)
-  const [profile, setProfile] = useState<AccountUser | null>(null)
+  const [profile, setProfile] = useState<AccountProfile | null>(null)
   const [orders, setOrders] = useState<UserOrder[]>([])
   const [bookings, setBookings] = useState<UserBooking[]>([])
-  const [bookLookup, setBookLookup] = useState<Record<string, string>>({})
+  const [paidBooks, setPaidBooks] = useState<UserOrder[]>([])
+  const [paidCourses, setPaidCourses] = useState<UserOrder[]>([])
   const [loadingData, setLoadingData] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
-  const [downloadingOrderId, setDownloadingOrderId] = useState<string | null>(null)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
   const [profilePhone, setProfilePhone] = useState("")
@@ -186,46 +130,12 @@ export default function AccountPage() {
   const [loginEmail, setLoginEmail] = useState("")
   const [loginPassword, setLoginPassword] = useState("")
 
-  const paidOrders = useMemo(() => orders.filter((item) => item.status === "paid"), [orders])
-  const paidCourses = useMemo(() => paidOrders.filter((item) => item.productType === "course"), [paidOrders])
-  const paidBooks = useMemo(() => paidOrders.filter((item) => item.productType === "book"), [paidOrders])
   const supportWhatsappUrl = useMemo(() => {
     const latestOrderId = orders[0]?.id || ""
     const latestBookingId = bookings[0]?.id || ""
     const message = `مرحبًا، أحتاج مساعدة في حسابي.${latestOrderId ? ` رقم الطلب: ${latestOrderId}.` : ""}${latestBookingId ? ` رقم الحجز: ${latestBookingId}.` : ""}`
     return buildWhatsAppUrl(message)
   }, [bookings, orders])
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function loadBookLookup() {
-      try {
-        const response = await fetch("/api/catalog", { cache: "no-store" })
-        const result = await response.json()
-        if (!response.ok || !result?.ok || !Array.isArray(result.books)) return
-
-        const lookup: Record<string, string> = {}
-        for (const rawBook of result.books as Array<Record<string, unknown>>) {
-          const id = String(rawBook.id || "").trim()
-          const slug = String(rawBook.slug || "").trim()
-          if (!id) continue
-          lookup[id] = id
-          if (slug) lookup[slug] = id
-        }
-
-        if (!cancelled) setBookLookup(lookup)
-      } catch {
-        if (!cancelled) setBookLookup({})
-      }
-    }
-
-    void loadBookLookup()
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
 
   useEffect(() => {
     if (!hasFirebasePublicConfig()) {
@@ -246,80 +156,43 @@ export default function AccountPage() {
   }, [])
 
   useEffect(() => {
-    async function loadAccountData(user: User) {
-      const db = getFirebaseClientDb()
-      if (!db) {
-        setProfile(null)
-        setOrders([])
-        setBookings([])
-        return
-      }
-
+    async function loadSummary(user: User) {
       setLoadingData(true)
       setError("")
       try {
-        const userRef = doc(db, "users", user.uid)
-        const userSnap = await getDoc(userRef)
-
-        const baseProfile: AccountUser = {
-          uid: user.uid,
-          name: resolveAccountName(user),
-          email: user.email || "",
-          phone: "",
-          createdAt: new Date().toISOString(),
+        const token = await user.getIdToken()
+        const response = await fetch("/api/account/summary", {
+          method: "GET",
+          cache: "no-store",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        const result = (await response.json()) as AccountSummaryResponse
+        if (!response.ok || !result.ok) {
+          throw new Error(result.message || "تعذر تحميل بيانات الحساب الآن. يرجى المحاولة لاحقًا.")
         }
 
-        if (!userSnap.exists()) {
-          await setDoc(userRef, {
-            uid: user.uid,
-            name: baseProfile.name,
-            email: baseProfile.email,
-            phone: "",
-            createdAt: baseProfile.createdAt,
-            updatedAt: baseProfile.createdAt,
-          })
-          setProfile(baseProfile)
-          setProfilePhone("")
-        } else {
-          const data = userSnap.data() as Record<string, unknown>
-          const loaded: AccountUser = {
-            uid: user.uid,
-            name: resolveAccountName(user, data.name),
-            email: String(data.email || user.email || ""),
-            phone: String(data.phone || ""),
-            createdAt: toISODate(data.createdAt),
-          }
-          setProfile(loaded)
-          setProfilePhone(loaded.phone)
+        const loadedProfile: AccountProfile = {
+          uid: text(result.profile?.uid) || user.uid,
+          name: text(result.profile?.name) || resolveAccountName(user, result.profile?.name),
+          email: text(result.profile?.email) || normalizeEmail(text(user.email)),
+          phone: text(result.profile?.phone),
+          createdAt: text(result.profile?.createdAt),
         }
 
-        const [ordersByUserResult, ordersByEmailResult, bookingsByUserResult, bookingsByEmailResult] = await Promise.allSettled([
-          getDocs(query(collection(db, "orders"), where("userId", "==", user.uid))),
-          user.email ? getDocs(query(collection(db, "orders"), where("email", "==", user.email))) : Promise.resolve(null),
-          getDocs(query(collection(db, "bookings"), where("userId", "==", user.uid))),
-          user.email ? getDocs(query(collection(db, "bookings"), where("email", "==", user.email))) : Promise.resolve(null),
-        ])
-
-        const ordersByUser =
-          ordersByUserResult.status === "fulfilled" ? mapOrdersFromSnapshot(ordersByUserResult.value) : []
-        const ordersByEmail =
-          ordersByEmailResult.status === "fulfilled" && ordersByEmailResult.value
-            ? mapOrdersFromSnapshot(ordersByEmailResult.value)
-            : []
-        const mergedOrders = sortByCreatedAtDesc(mergeById(ordersByUser, ordersByEmail))
-        setOrders(mergedOrders)
-
-        const bookingsByUser =
-          bookingsByUserResult.status === "fulfilled" ? mapBookingsFromSnapshot(bookingsByUserResult.value) : []
-        const bookingsByEmail =
-          bookingsByEmailResult.status === "fulfilled" && bookingsByEmailResult.value
-            ? mapBookingsFromSnapshot(bookingsByEmailResult.value)
-            : []
-        const mergedBookings = sortByCreatedAtDesc(mergeById(bookingsByUser, bookingsByEmail))
-        setBookings(mergedBookings)
-
-      } catch {
-        setError("تعذر تحميل بيانات الحساب حاليًا.")
+        setProfile(loadedProfile)
+        setProfilePhone(loadedProfile.phone)
+        setOrders(Array.isArray(result.orders) ? result.orders : [])
+        setBookings(Array.isArray(result.bookings) ? result.bookings : [])
+        setPaidBooks(Array.isArray(result.paidBooks) ? result.paidBooks : [])
+        setPaidCourses(Array.isArray(result.paidCourses) ? result.paidCourses : [])
+      } catch (loadError) {
+        setError(
+          loadError instanceof Error
+            ? loadError.message
+            : "تعذر تحميل بيانات الحساب الآن. يرجى المحاولة مرة أخرى أو التواصل مع الدعم.",
+        )
       } finally {
         setLoadingData(false)
       }
@@ -329,10 +202,13 @@ export default function AccountPage() {
       setProfile(null)
       setOrders([])
       setBookings([])
+      setPaidBooks([])
+      setPaidCourses([])
+      setProfilePhone("")
       return
     }
 
-    void loadAccountData(currentUser)
+    void loadSummary(currentUser)
   }, [currentUser])
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
@@ -349,7 +225,7 @@ export default function AccountPage() {
     }
 
     try {
-      await signInWithEmailAndPassword(auth, loginEmail.trim(), loginPassword)
+      await signInWithEmailAndPassword(auth, normalizeEmail(loginEmail), loginPassword)
       setSuccess("تم تسجيل الدخول بنجاح.")
     } catch {
       setError("تعذر تسجيل الدخول. تأكدي من البريد وكلمة المرور.")
@@ -373,22 +249,29 @@ export default function AccountPage() {
     }
 
     try {
-      const name = registerName.trim()
+      const name = text(registerName)
+      const email = normalizeEmail(registerEmail)
+      const phone = text(registerPhone)
       if (!name) {
         setError("يرجى إدخال الاسم الكامل.")
         setActionLoading(false)
         return
       }
+      if (!email) {
+        setError("يرجى إدخال بريد إلكتروني صالح.")
+        setActionLoading(false)
+        return
+      }
 
-      const credential = await createUserWithEmailAndPassword(auth, registerEmail.trim(), registerPassword)
+      const credential = await createUserWithEmailAndPassword(auth, email, registerPassword)
       await updateProfile(credential.user, { displayName: name })
 
       const now = new Date().toISOString()
       await setDoc(doc(db, "users", credential.user.uid), {
         uid: credential.user.uid,
         name,
-        email: registerEmail.trim(),
-        phone: registerPhone.trim(),
+        email,
+        phone,
         createdAt: now,
         updatedAt: now,
       })
@@ -416,7 +299,7 @@ export default function AccountPage() {
 
     const db = getFirebaseClientDb()
     if (!db) {
-      setError("خدمة الحساب غير متاحة حاليًا.")
+      setError("تعذر تحديث بيانات الحساب الآن.")
       return
     }
 
@@ -425,30 +308,16 @@ export default function AccountPage() {
     setSuccess("")
     try {
       await updateDoc(doc(db, "users", currentUser.uid), {
-        phone: profilePhone.trim(),
+        phone: text(profilePhone),
+        email: normalizeEmail(profile.email),
         updatedAt: new Date().toISOString(),
       })
-      setProfile({ ...profile, phone: profilePhone.trim() })
+      setProfile({ ...profile, phone: text(profilePhone) })
       setSuccess("تم تحديث بيانات الحساب بنجاح.")
     } catch {
       setError("تعذر تحديث بيانات الحساب.")
     } finally {
       setActionLoading(false)
-    }
-  }
-
-  async function handleBookDownload(orderId: string) {
-    if (!currentUser) return
-    setError("")
-
-    try {
-      setDownloadingOrderId(orderId)
-      const token = await currentUser.getIdToken()
-      globalThis.location.assign(`/api/download/${encodeURIComponent(orderId)}?token=${encodeURIComponent(token)}`)
-    } catch {
-      setError("تعذر بدء تحميل الكتاب الآن. يرجى المحاولة مرة أخرى.")
-    } finally {
-      setDownloadingOrderId(null)
     }
   }
 
@@ -458,7 +327,7 @@ export default function AccountPage() {
         <Header />
         <main className="pt-20 section-padding sm:pt-24" dir="rtl">
           <div className="container-brand">
-            <div className="rounded-[2rem] border border-border bg-card p-8 text-center text-muted-foreground">جاري تحميل الحساب...</div>
+            <div className="rounded-[2rem] border border-border bg-card p-8 text-center text-muted-foreground">جارٍ تحميل الحساب...</div>
           </div>
         </main>
         <Footer />
@@ -534,7 +403,7 @@ export default function AccountPage() {
                       disabled={actionLoading}
                       className="h-12 rounded-full bg-[var(--burgundy)] text-primary-foreground hover:bg-[var(--burgundy)]/90"
                     >
-                      {actionLoading ? "جاري تسجيل الدخول..." : "دخول"}
+                      {actionLoading ? "جارٍ تسجيل الدخول..." : "دخول"}
                     </Button>
                   </form>
                 </TabsContent>
@@ -588,7 +457,7 @@ export default function AccountPage() {
                       disabled={actionLoading}
                       className="h-12 rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
                     >
-                      {actionLoading ? "جاري إنشاء الحساب..." : "إنشاء حساب"}
+                      {actionLoading ? "جارٍ إنشاء الحساب..." : "إنشاء حساب"}
                     </Button>
                   </form>
                 </TabsContent>
@@ -623,7 +492,7 @@ export default function AccountPage() {
                 <h1 className="mt-3 text-4xl font-black text-foreground sm:text-5xl">
                   مرحبًا، {profile?.name || resolveAccountName(currentUser)}
                 </h1>
-                <p className="mt-3 text-muted-foreground">{profile?.email}</p>
+                <p className="mt-3 text-muted-foreground">{profile?.email || normalizeEmail(text(currentUser.email))}</p>
               </div>
               <div className="flex gap-3">
                 <Link href="/booking">
@@ -654,11 +523,11 @@ export default function AccountPage() {
               <p className="mt-2 text-3xl font-black text-foreground latin">{orders.length}</p>
             </div>
             <div className="rounded-2xl border border-border bg-card p-5">
-              <p className="text-sm text-muted-foreground">كورسات مفعّلة</p>
+              <p className="text-sm text-muted-foreground">كورساتي</p>
               <p className="mt-2 text-3xl font-black text-foreground latin">{paidCourses.length}</p>
             </div>
             <div className="rounded-2xl border border-border bg-card p-5">
-              <p className="text-sm text-muted-foreground">كتب مفعّلة</p>
+              <p className="text-sm text-muted-foreground">كتبي</p>
               <p className="mt-2 text-3xl font-black text-foreground latin">{paidBooks.length}</p>
             </div>
           </div>
@@ -666,63 +535,102 @@ export default function AccountPage() {
           <div className="mt-8 grid gap-6 lg:grid-cols-2">
             <section className="rounded-[2rem] border border-border bg-card p-6">
               <h2 className="text-2xl font-black text-foreground">كورساتي</h2>
-              {loadingData ? <p className="mt-4 text-muted-foreground">جاري التحميل...</p> : null}
-              {!loadingData && paidCourses.length === 0 ? <p className="mt-4 text-muted-foreground">لا توجد كورسات مفعّلة بعد.</p> : null}
+              {loadingData ? <p className="mt-4 text-muted-foreground">جارٍ التحميل...</p> : null}
+              {!loadingData && paidCourses.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border p-8 text-center bg-muted/10 mt-4">
+                  <BookOpen className="mx-auto h-10 w-10 text-muted-foreground/60 mb-3" />
+                  <p className="text-muted-foreground font-bold">لا توجد كورسات مفعّلة في حسابكِ حالياً.</p>
+                  <p className="text-xs text-muted-foreground/80 mt-1 max-w-sm mx-auto leading-6">
+                    استكشفي برامجنا التدريبية المتميزة وابدئي رحلة التعلم والتطور الذاتي اليوم.
+                  </p>
+                  <Link href="/courses" className="inline-block mt-4">
+                    <Button size="sm" variant="outline" className="rounded-full bg-transparent">
+                      استكشاف الكورسات
+                    </Button>
+                  </Link>
+                </div>
+              ) : null}
               <div className="mt-4 grid gap-3">
                 {paidCourses.map((item) => (
-                    <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
-                      <p className="font-bold text-foreground">{item.productTitle}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {orderStatusLabel(item.status)} · {item.amount.toLocaleString("ar-EG")} EGP
-                      </p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <Link href={`/account/protected/course/${item.productId}`} className="inline-flex text-sm font-bold text-primary">
-                          عرض الكورس
-                        </Link>
-                        <Link href={`/courses/${item.productId}`} className="text-sm text-muted-foreground hover:text-primary">
-                          تفاصيل الكورس
-                        </Link>
-                      </div>
-                    </article>
-                  ))}
+                  <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
+                    <p className="font-bold text-foreground">{item.productTitle}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {orderStatusLabel(item.status)} · {toNumber(item.amount).toLocaleString("ar-EG")} EGP
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Link href={`/account/protected/course/${item.productId}`} className="inline-flex text-sm font-bold text-primary">
+                        عرض الكورس
+                      </Link>
+                      <Link href={`/courses/${item.productId}`} className="text-sm text-muted-foreground hover:text-primary">
+                        تفاصيل الكورس
+                      </Link>
+                    </div>
+                  </article>
+                ))}
               </div>
             </section>
 
             <section className="rounded-[2rem] border border-border bg-card p-6">
               <h2 className="text-2xl font-black text-foreground">كتبي</h2>
-              {loadingData ? <p className="mt-4 text-muted-foreground">جاري التحميل...</p> : null}
-              {!loadingData && paidBooks.length === 0 ? <p className="mt-4 text-muted-foreground">لا توجد كتب مفعّلة بعد.</p> : null}
+              {loadingData ? <p className="mt-4 text-muted-foreground">جارٍ التحميل...</p> : null}
+              {!loadingData && paidBooks.length === 0 ? (
+                <div className="rounded-2xl border border-dashed border-border p-8 text-center bg-muted/10 mt-4">
+                  <BookOpen className="mx-auto h-10 w-10 text-muted-foreground/60 mb-3" />
+                  <p className="text-muted-foreground font-bold">لا توجد كتب مفعّلة في حسابكِ حالياً.</p>
+                  <p className="text-xs text-muted-foreground/80 mt-1 max-w-sm mx-auto leading-6">
+                    تصفحي مكتبتنا المميزة من الكتب الرقمية واكتشفي معارف جديدة تثري حياتكِ.
+                  </p>
+                  <Link href="/books" className="inline-block mt-4">
+                    <Button size="sm" variant="outline" className="rounded-full bg-transparent">
+                      تصفح الكتب
+                    </Button>
+                  </Link>
+                </div>
+              ) : null}
               <div className="mt-4 grid gap-3">
                 {paidBooks.map((item) => (
-                    <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
-                      <p className="font-bold text-foreground">{item.productTitle}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        {orderStatusLabel(item.status)} · {item.amount.toLocaleString("ar-EG")} EGP
-                      </p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <Link href={`/books/${resolvePaidBookId(item, bookLookup) || item.productId}`} className="inline-flex text-sm font-bold text-primary">
-                          عرض الكتاب
-                        </Link>
-                        <Link href={`/account/protected/book/${resolvePaidBookId(item, bookLookup) || item.productId}`} className="inline-flex items-center gap-1 text-sm font-bold text-primary">
-                          فتح الكتاب المحمي
-                          <ExternalLink className="h-3.5 w-3.5" />
-                        </Link>
-                      </div>
-                    </article>
-                  ))}
+                  <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
+                    <p className="font-bold text-foreground">{item.productTitle}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {orderStatusLabel(item.status)} · {toNumber(item.amount).toLocaleString("ar-EG")} EGP
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Link href={`/books/${item.productId}`} className="inline-flex text-sm font-bold text-primary">
+                        عرض الكتاب
+                      </Link>
+                      <Link href={`/account/protected/book/${item.productId}`} className="inline-flex items-center gap-1 text-sm font-bold text-primary">
+                        فتح الكتاب المحمي
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </Link>
+                    </div>
+                  </article>
+                ))}
               </div>
             </section>
           </div>
 
           <section className="mt-8 rounded-[2rem] border border-border bg-card p-6">
             <h2 className="text-2xl font-black text-foreground">حجوزاتي</h2>
-            {loadingData ? <p className="mt-4 text-muted-foreground">جاري التحميل...</p> : null}
-            {!loadingData && bookings.length === 0 ? <p className="mt-4 text-muted-foreground">لا توجد حجوزات بعد.</p> : null}
+            {loadingData ? <p className="mt-4 text-muted-foreground">جارٍ التحميل...</p> : null}
+            {!loadingData && bookings.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-border p-8 text-center bg-muted/10 mt-4">
+                <CalendarDays className="mx-auto h-10 w-10 text-muted-foreground/60 mb-3" />
+                <p className="text-muted-foreground font-bold">لا توجد حجوزات نشطة بعد.</p>
+                <p className="text-xs text-muted-foreground/80 mt-1 max-w-sm mx-auto leading-6">
+                  احجزي جلستكِ الاستشارية الأولى الآن لبدء التخطيط وتلقي الدعم والتمكين الفردي.
+                </p>
+                <Link href="/booking" className="inline-block mt-4">
+                  <Button size="sm" variant="outline" className="rounded-full bg-transparent">
+                    حجز جلسة جديدة
+                  </Button>
+                </Link>
+              </div>
+            ) : null}
             <div className="mt-4 grid gap-3">
               {bookings.map((item) => (
                 <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
                   <p className="font-bold text-foreground">
-                    جلسة {item.duration} دقيقة · {item.amount.toLocaleString("ar-EG")} EGP
+                    جلسة {toNumber(item.duration)} دقيقة · {toNumber(item.amount).toLocaleString("ar-EG")} EGP
                   </p>
                   <p className="mt-2 text-xs">
                     <span className="rounded-full bg-primary/10 px-2 py-1 font-bold text-primary">{bookingStatusLabel(item.status)}</span>
@@ -736,8 +644,28 @@ export default function AccountPage() {
 
           <section className="mt-8 rounded-[2rem] border border-border bg-card p-6">
             <h2 className="text-2xl font-black text-foreground">طلباتي</h2>
-            {loadingData ? <p className="mt-4 text-muted-foreground">جاري التحميل...</p> : null}
-            {!loadingData && orders.length === 0 ? <p className="mt-4 text-muted-foreground">لا توجد طلبات بعد.</p> : null}
+            {loadingData ? <p className="mt-4 text-muted-foreground">جارٍ التحميل...</p> : null}
+            {!loadingData && orders.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-border p-8 text-center bg-muted/10 mt-4">
+                <WalletCards className="mx-auto h-10 w-10 text-muted-foreground/60 mb-3" />
+                <p className="text-muted-foreground font-bold">لا توجد طلبات شراء مسجلة.</p>
+                <p className="text-xs text-muted-foreground/80 mt-1 max-w-sm mx-auto leading-6">
+                  عند شرائكِ لأحد الكتب أو الكورسات الرقمية، ستظهر تفاصيل طلباتكِ هنا لمتابعة حالة التفعيل.
+                </p>
+                <div className="mt-4 flex justify-center gap-3">
+                  <Link href="/books">
+                    <Button size="sm" variant="outline" className="rounded-full bg-transparent">
+                      الكتب
+                    </Button>
+                  </Link>
+                  <Link href="/courses">
+                    <Button size="sm" variant="outline" className="rounded-full bg-transparent">
+                      الكورسات
+                    </Button>
+                  </Link>
+                </div>
+              </div>
+            ) : null}
             <div className="mt-4 grid gap-3">
               {orders.map((item) => (
                 <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
@@ -746,7 +674,7 @@ export default function AccountPage() {
                     <span className="rounded-full bg-muted px-2 py-1 font-bold text-foreground">{orderTypeLabel(item.productType)}</span>
                     <span className="mr-2 rounded-full bg-primary/10 px-2 py-1 font-bold text-primary">{orderStatusLabel(item.status)}</span>
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground latin">{item.amount.toLocaleString("ar-EG")} EGP</p>
+                  <p className="mt-1 text-xs text-muted-foreground latin">{toNumber(item.amount).toLocaleString("ar-EG")} EGP</p>
                 </article>
               ))}
             </div>
@@ -769,7 +697,7 @@ export default function AccountPage() {
                 />
               </div>
               <Button type="submit" disabled={actionLoading} className="h-11 rounded-full bg-primary text-primary-foreground">
-                {actionLoading ? "جاري الحفظ..." : "حفظ البيانات"}
+                {actionLoading ? "جارٍ الحفظ..." : "حفظ البيانات"}
               </Button>
             </form>
           </section>

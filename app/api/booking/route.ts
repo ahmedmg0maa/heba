@@ -26,6 +26,10 @@ function text(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
 }
 
+function normalizeEmail(value: unknown) {
+  return text(value).toLowerCase()
+}
+
 function duration(value: unknown): SessionDuration {
   return Number(value) === 90 ? 90 : 60
 }
@@ -86,7 +90,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const customerName = text(body.customerName || body.name)
     const phone = text(body.phone)
-    const email = text(body.email)
+    const email = normalizeEmail(body.email)
     const message = text(body.message)
     const discountCode = normalizeDiscountCode(body.discountCode)
     const sessionDuration = duration(body.duration)

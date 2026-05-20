@@ -30,6 +30,10 @@ function makeKey(product: Product) {
   return `${product.type}:${product.id}`
 }
 
+function normalizeEmail(value: string) {
+  return value.trim().toLowerCase()
+}
+
 export default function CheckoutPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -135,7 +139,7 @@ export default function CheckoutPage() {
       productTitle: selectedProduct.title,
       amount: selectedProduct.price,
       customerName: String(formData.get("name") ?? ""),
-      email: String(formData.get("email") ?? ""),
+      email: normalizeEmail(String(formData.get("email") ?? "")),
       phone: String(formData.get("phone") ?? ""),
       paymentMethod,
       userId,
@@ -225,7 +229,7 @@ export default function CheckoutPage() {
                     <p className="eyebrow">الدفع</p>
                     <h2 className="mt-3 text-3xl font-black text-foreground sm:text-4xl">أكملي بيانات الطلب</h2>
                     <p className="mt-3 leading-8 text-muted-foreground">
-                      بعد إرسال الطلب ستظهر حالته في حسابك كـ قيد المراجعة إلى أن يتم تأكيد الدفع وتفعيل الوصول.
+                      بعد إرسال الطلب ستظهر حالته في حسابك كـ قيد المراجعة. طلبك قيد المراجعة وسيتم تفعيل الوصول بعد تأكيد الدفع.
                     </p>
                   </div>
 

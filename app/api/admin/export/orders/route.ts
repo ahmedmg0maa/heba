@@ -24,11 +24,39 @@ export async function GET() {
     limit: 5000,
   })
 
-  const headers = ["id", "customerName", "email", "productId", "productType", "amount", "status", "createdAt"]
+  const headers = [
+    "id",
+    "orderNumber",
+    "customerName",
+    "email",
+    "phone",
+    "productTitle",
+    "productId",
+    "itemId",
+    "productSlug",
+    "productType",
+    "amount",
+    "status",
+    "createdAt",
+  ]
   const lines = [
     headers.join(","),
     ...orders.map((item) =>
-      [item.id, item.customerName, item.email, item.productId, item.productType, item.amount, item.status, item.createdAt]
+      [
+        item.id,
+        item.orderNumber,
+        item.customerName,
+        item.email,
+        item.phone,
+        item.productTitle,
+        item.productId,
+        item.itemId,
+        item.productSlug,
+        item.productType,
+        item.amount,
+        item.status,
+        item.createdAt,
+      ]
         .map(csvValue)
         .join(","),
     ),
