@@ -56,7 +56,7 @@ export function ProtectedContentViewer({
   const [error, setError] = useState("")
   const [warning, setWarning] = useState("")
   const [productTitle, setProductTitle] = useState(title)
-  const [openLabel, setOpenLabel] = useState("فتح الكتاب")
+  const [openLabel, setOpenLabel] = useState("فتح الرابط")
   const [noticePrimary, setNoticePrimary] = useState(
     "هذا المحتوى مخصص لاستخدامك الشخصي فقط. يُمنع تصويره أو تسجيله أو مشاركته أو إعادة نشره بأي شكل.",
   )
@@ -93,7 +93,7 @@ export function ProtectedContentViewer({
       setContentKind(result.contentKind || "file")
       setExpiresAt(result.expiresAt || "")
       setProductTitle(result.productTitle || title)
-      setOpenLabel(result.openLabel || "فتح الكتاب")
+      setOpenLabel(result.openLabel || "فتح الرابط")
       setNoticePrimary(result.legalNoticePrimary || noticePrimary)
       setNoticeSecondary(result.legalNoticeSecondary || noticeSecondary)
       setTrace(result.trace || null)
@@ -171,12 +171,10 @@ export function ProtectedContentViewer({
       {loading ? (
         <div className="flex min-h-[280px] items-center justify-center rounded-2xl border border-border bg-background text-muted-foreground">
           <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-          جاري تجهيز المحتوى المحمي...
+          جارٍ تجهيز المحتوى المحمي...
         </div>
       ) : error ? (
-        <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm font-bold text-destructive">
-          {error}
-        </div>
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm font-bold text-destructive">{error}</div>
       ) : (
         <div className="space-y-4">
           <div className="rounded-2xl border border-border bg-background p-4">
@@ -184,11 +182,14 @@ export function ProtectedContentViewer({
             <h2 className="mt-1 text-xl font-black text-foreground">{productTitle}</h2>
             <p className="mt-3 text-sm font-bold text-destructive">{noticePrimary}</p>
             <p className="mt-2 text-sm text-muted-foreground">{noticeSecondary}</p>
+            <p className="mt-3 inline-flex rounded-full border border-border px-3 py-1 text-xs font-bold text-foreground">
+              العلامة المائية: {watermarkText}
+            </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <Button type="button" className="rounded-full" onClick={handleOpen}>
-              {openLabel || "فتح الكتاب"}
+              {openLabel}
               <ExternalLink className="h-4 w-4" />
             </Button>
 

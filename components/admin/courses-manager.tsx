@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/hooks/use-toast"
 
 type CourseRecord = {
@@ -48,6 +48,15 @@ const initialForm: FormState = {
   coverImageUrl: "",
   accessUrl: "",
   status: "active",
+}
+
+function text(value: unknown) {
+  return typeof value === "string" ? value.trim() : ""
+}
+
+function toNumber(value: unknown) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : 0
 }
 
 function toSlug(value: string) {
@@ -100,16 +109,26 @@ export function CoursesManager() {
 
     const payload = {
       id: toSlug(form.id || form.slug || form.title),
-      title: form.title.trim(),
+      title: text(form.title),
       slug: toSlug(form.slug || form.id || form.title),
-      shortDescription: form.shortDescription.trim(),
-      description: form.description.trim(),
+      shortDescription: text(form.shortDescription),
+      description: text(form.description),
       price: Number(form.price || 0),
       lessonsCount: Number(form.lessonsCount || 0),
-      duration: form.duration.trim(),
-      coverImageUrl: form.coverImageUrl.trim(),
-      accessUrl: form.accessUrl.trim(),
+      duration: text(form.duration),
+      coverImageUrl: text(form.coverImageUrl),
+      accessUrl: text(form.accessUrl),
       status: form.status,
+    }
+
+    if (!payload.title) {
+      toast({
+        title: "بيانات غير مكتملة",
+        description: "يرجى إدخال عنوان الكورس.",
+        variant: "destructive",
+      })
+      setSaving(false)
+      return
     }
 
     try {
@@ -210,7 +229,7 @@ export function CoursesManager() {
     <div className="space-y-6" dir="rtl">
       <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
         <h1 className="text-3xl font-black text-foreground">إدارة الكورسات</h1>
-        <p className="mt-2 text-muted-foreground">إضافة وتعديل وحذف الكورسات وإدارة روابط Google Drive.</p>
+        <p className="mt-2 text-muted-foreground">إضافة وتعديل وحذف الكورسات وروابط المحتوى عبر Google Drive أو أي منصة خارجية.</p>
       </section>
 
       <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
@@ -312,21 +331,21 @@ export function CoursesManager() {
               id="course-image"
               value={form.coverImageUrl}
               onChange={(event) => setForm((prev) => ({ ...prev, coverImageUrl: event.target.value }))}
-              placeholder="https://drive.google.com/..."
+              placeholder="https://drive.google.com/file/d/FILE_ID/view"
               className="w-full"
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="course-access">رابط دخول الكورس</Label>
+            <Label htmlFor="course-access">رابط محتوى الكورس من Google Drive أو منصة خارجية</Label>
             <Input
               id="course-access"
               value={form.accessUrl}
               onChange={(event) => setForm((prev) => ({ ...prev, accessUrl: event.target.value }))}
-              placeholder="https://drive.google.com/file/d/FILE_ID/view"
+              placeholder="https://drive.google.com/drive/folders/FOLDER_ID"
               className="w-full"
             />
-            <p className="text-xs leading-6 text-muted-foreground break-words">رابط محتوى الكورس من Google Drive أو منصة خارجية.</p>
+            <p className="text-xs leading-6 text-muted-foreground break-words">رابط دخول الكورس يظهر للمستخدم بعد تأكيد الدفع.</p>
             <p className="rounded-xl border border-border bg-secondary/25 p-3 text-xs leading-6 text-muted-foreground break-words">
               ارفعي الملف على Google Drive، ثم اجعلي المشاركة: أي شخص لديه الرابط يمكنه العرض، وبعدها ضعي الرابط هنا.
             </p>
@@ -379,7 +398,7 @@ export function CoursesManager() {
                 <div className="min-w-0">
                   <p className="font-bold text-foreground">{item.title}</p>
                   <p className="text-xs text-muted-foreground break-words">
-                    {item.slug} · {item.price?.toLocaleString("ar-EG")} EGP · {item.status}
+                    {item.slug} · {toNumber(item.price).toLocaleString("ar-EG")} EGP · {item.status}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">

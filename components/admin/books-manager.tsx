@@ -4,8 +4,8 @@ import { useEffect, useMemo, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
 import { toast } from "@/hooks/use-toast"
 
 type BookRecord = {
@@ -44,6 +44,10 @@ const initialForm: FormState = {
   status: "active",
 }
 
+function text(value: unknown) {
+  return typeof value === "string" ? value.trim() : ""
+}
+
 function toSlug(value: string) {
   return value
     .toLowerCase()
@@ -51,6 +55,11 @@ function toSlug(value: string) {
     .replace(/[^a-z0-9\u0600-\u06FF\s-]/g, "")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
+}
+
+function toNumber(value: unknown) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : 0
 }
 
 export function BooksManager() {
@@ -94,14 +103,24 @@ export function BooksManager() {
 
     const payload = {
       id: toSlug(form.id || form.slug || form.title),
-      title: form.title.trim(),
+      title: text(form.title),
       slug: toSlug(form.slug || form.id || form.title),
-      shortDescription: form.shortDescription.trim(),
-      description: form.description.trim(),
+      shortDescription: text(form.shortDescription),
+      description: text(form.description),
       price: Number(form.price || 0),
-      coverImageUrl: form.coverImageUrl.trim(),
-      fileUrl: form.fileUrl.trim(),
+      coverImageUrl: text(form.coverImageUrl),
+      fileUrl: text(form.fileUrl),
       status: form.status,
+    }
+
+    if (!payload.title) {
+      toast({
+        title: "بيانات غير مكتملة",
+        description: "يرجى إدخال عنوان الكتاب.",
+        variant: "destructive",
+      })
+      setSaving(false)
+      return
     }
 
     try {
@@ -200,7 +219,7 @@ export function BooksManager() {
     <div className="space-y-6" dir="rtl">
       <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
         <h1 className="text-3xl font-black text-foreground">إدارة الكتب</h1>
-        <p className="mt-2 text-muted-foreground">إضافة وتعديل وحذف الكتب وإدارة روابط Google Drive.</p>
+        <p className="mt-2 text-muted-foreground">إضافة وتعديل وحذف الكتب وإدارة روابط Google Drive بدون الاعتماد على Firebase Storage.</p>
       </section>
 
       <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
@@ -294,7 +313,7 @@ export function BooksManager() {
               id="book-image"
               value={form.coverImageUrl}
               onChange={(event) => setForm((prev) => ({ ...prev, coverImageUrl: event.target.value }))}
-              placeholder="https://drive.google.com/..."
+              placeholder="https://drive.google.com/file/d/FILE_ID/view"
               className="w-full"
             />
           </div>
@@ -346,7 +365,7 @@ export function BooksManager() {
                 <div className="min-w-0">
                   <p className="font-bold text-foreground">{item.title}</p>
                   <p className="text-xs text-muted-foreground break-words">
-                    {item.slug} · {item.price?.toLocaleString("ar-EG")} EGP · {item.status}
+                    {item.slug} · {toNumber(item.price).toLocaleString("ar-EG")} EGP · {item.status}
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">

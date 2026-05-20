@@ -62,6 +62,7 @@ export function BookingStatusSelect({
   return (
     <div className="space-y-2">
       <p className="text-xs font-bold text-muted-foreground">{statusLabel(status)}</p>
+      <p className="text-[11px] text-muted-foreground">متاح بعد قبول الحجز</p>
       <div className="flex flex-wrap gap-1.5">
         <Button
           type="button"
