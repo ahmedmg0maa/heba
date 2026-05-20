@@ -15,7 +15,6 @@ import {
 
 export const brand = {
   name: "هبة الشريف",
-  englishName: "Heba El Sharif",
   tagline: "نقطة وعي",
   promise: "رحلة وعي تعيدك إلى ذاتك",
   shortBio:
@@ -37,9 +36,9 @@ export const navItems = [
 
 export const stats = [
   { value: "1:1", label: "جلسات فردية عميقة" },
-  { value: "Arabic", label: "تجربة عربية هادئة" },
-  { value: "Online", label: "خدمات متاحة أونلاين" },
-  { value: "Premium", label: "تجربة شخصية راقية" },
+  { value: "عربي", label: "تجربة عربية هادئة" },
+  { value: "عن بُعد", label: "خدمات متاحة من أي مكان" },
+  { value: "راقية", label: "تجربة شخصية راقية" },
 ]
 
 export type Service = {

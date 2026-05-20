@@ -3,7 +3,6 @@ import { BookOpen, Layers3, MessageCircleHeart, UsersRound } from "lucide-react"
 
 export const brand = {
   arName: "هبة الشريف",
-  enName: "Heba El Sharif",
   tagline: "مساحة هادئة للوعي",
   shortTagline: "رحلة وعي تعيدكِ إلى ذاتك",
   email: "hello@hebaelsharif.com",
