@@ -6,38 +6,44 @@ service cloud.firestore {
     }
 
     function userEmail() {
-      return isSignedIn() && request.auth.token.email is string ? request.auth.token.email : null;
+      return isSignedIn() && request.auth.token.email is string ? request.auth.token.email : "";
     }
 
-    function isUserDocOwner() {
+    function normalizedUserEmail() {
+      return userEmail().lower();
+    }
+
+    function normalizedResourceEmail() {
+      return resource.data.email is string ? resource.data.email.lower() : "";
+    }
+
+    function isOwnerByUid() {
       return isSignedIn() && resource.data.userId == request.auth.uid;
     }
 
-    function emailMatchesResource() {
-      return userEmail() != null && resource.data.email == userEmail();
+    function isOwnerByEmail() {
+      return isSignedIn() && normalizedUserEmail() != "" && normalizedResourceEmail() == normalizedUserEmail();
     }
 
-    // User profile docs
     match /users/{userId} {
-      allow read, create, update: if isSignedIn() && request.auth.uid == userId;
+      allow read: if isSignedIn() && request.auth.uid == userId;
+      allow create: if isSignedIn()
+        && request.auth.uid == userId
+        && request.resource.data.uid == request.auth.uid;
+      allow update: if isSignedIn() && request.auth.uid == userId;
       allow delete: if false;
     }
 
-    // Orders are created/updated on the server only (Firebase Admin SDK).
-    // Client can only read own docs by uid or email.
     match /orders/{orderId} {
-      allow read: if isSignedIn() && (isUserDocOwner() || emailMatchesResource());
+      allow read: if isOwnerByUid() || isOwnerByEmail();
       allow create, update, delete: if false;
     }
 
-    // Bookings are created/updated on the server only (Firebase Admin SDK).
-    // Client can only read own docs by uid or email.
     match /bookings/{bookingId} {
-      allow read: if isSignedIn() && (isUserDocOwner() || emailMatchesResource());
+      allow read: if isOwnerByUid() || isOwnerByEmail();
       allow create, update, delete: if false;
     }
 
-    // Public catalog visibility (active only). Writes are server-side only.
     match /books/{bookId} {
       allow read: if resource.data.status == "active";
       allow create, update, delete: if false;
@@ -48,7 +54,6 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
-    // Internal collections: server-side only.
     match /messages/{messageId} {
       allow read, write: if false;
     }

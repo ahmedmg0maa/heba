@@ -1,6 +1,10 @@
 import { createHash } from "node:crypto"
 import type { NextRequest } from "next/server"
-import { extractGoogleDriveFileId } from "@/lib/google-drive"
+import {
+  extractGoogleDriveFileId,
+  normalizeGoogleDriveDownloadUrl,
+  normalizeGoogleDrivePreviewUrl,
+} from "@/lib/google-drive"
 import {
   FieldValue,
   addDocument,
@@ -17,6 +21,7 @@ const MAX_ACTIVE_DEVICES_PER_PRODUCT = 2
 const ACTIVE_SESSION_WINDOW_MS = 45 * 60 * 1000
 const SIGNED_URL_TTL_MS = 5 * 60 * 1000
 const RECENT_ACCESS_LIMIT_PER_HOUR = 30
+const MISSING_CONTENT_LINK_MESSAGE = "تم تأكيد وصولك، وسيتم تفعيل رابط المحتوى قريبًا. يمكنك التواصل مع الدعم للمساعدة."
 
 type ResolveOptions = {
   request: NextRequest
@@ -153,34 +158,13 @@ function parseFirebaseStoragePath(url: string, bucketName?: string | null) {
   }
 }
 
-function isDevelopment() {
-  return process.env.NODE_ENV !== "production"
-}
-
-function logBookAccessDebug(details: {
-  userId: string
-  requestedBookParam: string
-  resolvedBookId: string
-  matchingPaidOrderFound: boolean
-}) {
-  if (!isDevelopment()) return
-  console.debug("[protected-book-access]", details)
-}
-
 function normalizeDriveResourceUrl(url: string, mode: "download" | "stream") {
   const fileId = extractGoogleDriveFileId(url)
-  if (!fileId) return { normalizedUrl: url, previewable: false }
-
-  if (mode === "download") {
-    return {
-      normalizedUrl: `https://drive.google.com/uc?export=download&id=${fileId}`,
-      previewable: false,
-    }
-  }
-
+  const normalizedUrl = mode === "download" ? normalizeGoogleDriveDownloadUrl(url) : normalizeGoogleDrivePreviewUrl(url)
+  if (!fileId) return { normalizedUrl, previewable: false }
   return {
-    normalizedUrl: `https://drive.google.com/file/d/${fileId}/preview`,
-    previewable: true,
+    normalizedUrl,
+    previewable: mode === "stream",
   }
 }
 
@@ -215,31 +199,37 @@ async function resolveProduct(productType: ProtectedProductType, requestedParam:
   }
 }
 
-async function listPaidOrdersByIdentity(userId: string, emailCandidates: string[]) {
-  const whereByUser = [
-    { field: "status", value: "paid" },
-    { field: "userId", value: userId },
-  ]
+async function listOrdersByIdentity(userId: string, emailCandidates: string[]) {
+  const normalizedEmails = Array.from(
+    new Set(
+      emailCandidates
+        .map((candidate) => text(candidate))
+        .filter(Boolean)
+        .flatMap((candidate) => {
+          const lowered = normalizeEmail(candidate)
+          return lowered === candidate ? [candidate] : [candidate, lowered]
+        }),
+    ),
+  )
 
-  const emailQueries = Array.from(new Set(emailCandidates.map((item) => item.trim()).filter(Boolean))).map((email) =>
+  const emailQueries = normalizedEmails.map((email) =>
     listDocuments("orders", {
-      whereClauses: [
-        { field: "status", value: "paid" },
-        { field: "email", value: email },
-      ],
-      orderByField: "createdAt",
-      orderDirection: "desc",
-      limit: 100,
+      whereClauses: [{ field: "email", value: email }],
+      limit: 400,
     }),
   )
 
   const [ordersByUser, ...ordersByEmailGroups] = await Promise.all([
-    listDocuments("orders", { whereClauses: whereByUser, orderByField: "createdAt", orderDirection: "desc", limit: 100 }),
+    userId
+      ? listDocuments("orders", {
+          whereClauses: [{ field: "userId", value: userId }],
+          limit: 400,
+        })
+      : Promise.resolve([]),
     ...emailQueries,
   ])
-  const ordersByEmail = ordersByEmailGroups.flat()
+  const merged = [...ordersByUser, ...ordersByEmailGroups.flat()]
 
-  const merged = [...ordersByUser, ...ordersByEmail]
   const unique = new Map<string, (typeof merged)[number]>()
   for (const order of merged) unique.set(String(order.id), order)
   return Array.from(unique.values())
@@ -257,20 +247,14 @@ function matchesPaidOwnership(options: {
   if (orderStatus !== "paid") return false
   if (orderType !== productType) return false
 
-  const orderProductId = text(order.productId)
-  const orderProductSlug = text(order.productSlug)
-  const orderItemId = text(order.itemId)
+  const acceptedKeys = new Set([text(resolvedProductId).toLowerCase(), text(resolvedSlug).toLowerCase()].filter(Boolean))
+  if (!acceptedKeys.size) return false
 
-  if (productType === "book") {
-    return (
-      orderProductId === resolvedProductId ||
-      (resolvedSlug && orderProductId === resolvedSlug) ||
-      (resolvedSlug && orderProductSlug === resolvedSlug) ||
-      orderItemId === resolvedProductId
-    )
-  }
+  const orderKeys = [text(order.productId), text(order.itemId), text(order.productSlug)]
+    .map((value) => value.toLowerCase())
+    .filter(Boolean)
 
-  return orderProductId === resolvedProductId
+  return orderKeys.some((key) => acceptedKeys.has(key))
 }
 
 async function findPaidOrderForProduct(options: {
@@ -281,8 +265,8 @@ async function findPaidOrderForProduct(options: {
   resolvedSlug: string
 }) {
   const { productType, userId, emails, resolvedProductId, resolvedSlug } = options
-  const paidOrders = await listPaidOrdersByIdentity(userId, emails)
-  const matching = paidOrders.filter((order) =>
+  const orders = await listOrdersByIdentity(userId, emails)
+  const matching = orders.filter((order) =>
     matchesPaidOwnership({
       order,
       productType,
@@ -312,17 +296,13 @@ async function evaluateSessionRisk(options: {
   const now = Date.now()
 
   const sessions = await listDocuments("protected_active_sessions", {
-    whereClauses: [
-      { field: "userId", value: userId },
-      { field: "productType", value: productType },
-      { field: "productId", value: productId },
-    ],
-    orderByField: "lastSeenAt",
-    orderDirection: "desc",
-    limit: 100,
+    whereClauses: [{ field: "userId", value: userId }],
+    limit: 250,
   })
 
   const activeSessions = sessions.filter((item) => {
+    if (text(item.productType).toLowerCase() !== productType) return false
+    if (text(item.productId) !== productId) return false
     const lastSeen = parseDate(item.lastSeenAt)?.getTime() || 0
     return lastSeen > 0 && now - lastSeen <= ACTIVE_SESSION_WINDOW_MS
   })
@@ -339,7 +319,7 @@ async function evaluateSessionRisk(options: {
     }
   }
 
-  await setDocument(
+  const sessionWrite = await setDocument(
     "protected_active_sessions",
     sessionId,
     {
@@ -354,6 +334,16 @@ async function evaluateSessionRisk(options: {
     },
     true,
   )
+
+  if (!sessionWrite.ok) {
+    console.warn("[protected_active_sessions] write failed", {
+      userId,
+      productId,
+      productType,
+      error: sessionWrite.error || "UNKNOWN",
+      message: sessionWrite.message || "",
+    })
+  }
 
   return {
     ok: true as const,
@@ -443,11 +433,6 @@ async function logProtectedAccess(options: {
   }
   if (ip) payload.ip = ip
 
-  if (Object.keys(payload).length === 0) {
-    console.warn("[protected_access_logs] prevented empty payload write")
-    return
-  }
-
   const write = await addDocument("protected_access_logs", payload)
   if (!write.ok || !write.id) {
     console.warn("[protected_access_logs] write failed", {
@@ -462,18 +447,14 @@ async function logProtectedAccess(options: {
 
 async function countRecentAccesses(userId: string, productType: ProtectedProductType, productId: string) {
   const entries = await listDocuments("protected_access_logs", {
-    whereClauses: [
-      { field: "userId", value: userId },
-      { field: "productType", value: productType },
-      { field: "productId", value: productId },
-    ],
-    orderByField: "timestamp",
-    orderDirection: "desc",
-    limit: 120,
+    whereClauses: [{ field: "userId", value: userId }],
+    limit: 300,
   })
 
   const threshold = Date.now() - 60 * 60 * 1000
   return entries.filter((entry) => {
+    if (text(entry.productType).toLowerCase() !== productType) return false
+    if (text(entry.productId) !== productId) return false
     const ts = parseDate(entry.timestamp)?.getTime() || 0
     return ts >= threshold
   }).length
@@ -504,14 +485,6 @@ export async function resolveProtectedContentAccess(options: ResolveOptions): Pr
 
   const resolvedProduct = await resolveProduct(productType, requestedProductParam)
   if (!resolvedProduct) {
-    if (productType === "book") {
-      logBookAccessDebug({
-        userId,
-        requestedBookParam: requestedProductParam,
-        resolvedBookId: "",
-        matchingPaidOrderFound: false,
-      })
-    }
     return { ok: false, status: 404, message: "تعذر العثور على هذا المحتوى." }
   }
 
@@ -530,14 +503,6 @@ export async function resolveProtectedContentAccess(options: ResolveOptions): Pr
   })
 
   if (!order) {
-    if (productType === "book") {
-      logBookAccessDebug({
-        userId,
-        requestedBookParam: requestedProductParam,
-        resolvedBookId: resolvedProductId,
-        matchingPaidOrderFound: false,
-      })
-    }
     return { ok: false, status: 403, message: "هذا المحتوى متاح بعد تأكيد الدفع وتفعيل الوصول." }
   }
 
@@ -556,7 +521,7 @@ export async function resolveProtectedContentAccess(options: ResolveOptions): Pr
 
   const resourceUrl = text(resolvedProduct.resourceUrl)
   if (!resourceUrl) {
-    return { ok: false, status: 404, message: "تم تأكيد وصولك، وسيتم تفعيل رابط الكتاب قريبًا. يمكنك التواصل مع الدعم للمساعدة." }
+    return { ok: false, status: 404, message: MISSING_CONTENT_LINK_MESSAGE }
   }
 
   const bucket = getFirebaseStorageBucket()
@@ -585,7 +550,7 @@ export async function resolveProtectedContentAccess(options: ResolveOptions): Pr
     signedUrl = driveNormalized.normalizedUrl
     previewable = mode === "stream" && (driveNormalized.previewable || detectContentKind(resourceUrl) === "pdf")
   } else {
-    return { ok: false, status: 503, message: "تم تأكيد وصولك، وسيتم تفعيل رابط الكتاب قريبًا. يمكنك التواصل مع الدعم للمساعدة." }
+    return { ok: false, status: 503, message: MISSING_CONTENT_LINK_MESSAGE }
   }
 
   const recentAccessCount = await countRecentAccesses(userId, productType, resolvedProductId)
