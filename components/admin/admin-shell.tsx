@@ -13,7 +13,7 @@ const navigation = [
   { name: "الطلبات", href: "/admin/orders", icon: ShoppingCart },
   { name: "الكورسات", href: "/admin/courses", icon: Layers3 },
   { name: "الكتب", href: "/admin/books", icon: BookOpen },
-  { name: "سجل الوصول", href: "/admin/access", icon: Eye },
+  { name: "سجل الوصول", href: "/admin/access-logs", icon: Eye },
   { name: "الرسائل", href: "/admin/messages", icon: MessageSquare },
 ]
 
