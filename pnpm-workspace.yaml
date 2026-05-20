@@ -1,5 +1,0 @@
-allowBuilds:
-  '@firebase/util': false
-  protobufjs: false
-  sharp: true
-  unrs-resolver: set this to true or false
