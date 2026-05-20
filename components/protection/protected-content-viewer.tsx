@@ -162,7 +162,7 @@ export function ProtectedContentViewer({
   return (
     <section className="rounded-[2rem] border border-border bg-card p-5 shadow-sm" dir="rtl">
       {warning ? (
-        <div className="mb-4 flex items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+        <div className="mb-4 flex items-center gap-2 rounded-2xl border border-amber-200 bg-amber-50/80 px-4 py-3 text-[13px] font-medium leading-6 text-amber-900">
           <AlertTriangle className="h-4 w-4" />
           {warning}
         </div>
@@ -180,8 +180,10 @@ export function ProtectedContentViewer({
           <div className="rounded-2xl border border-border bg-background p-4">
             <p className="text-sm text-muted-foreground">المحتوى المحمي</p>
             <h2 className="mt-1 text-xl font-black text-foreground">{productTitle}</h2>
-            <p className="mt-3 text-sm font-bold text-destructive">{noticePrimary}</p>
-            <p className="mt-2 text-sm text-muted-foreground">{noticeSecondary}</p>
+            <div className="mt-3 rounded-xl border border-border/80 bg-muted/40 px-4 py-3">
+              <p className="text-sm leading-7 text-foreground">{noticePrimary}</p>
+              <p className="mt-1 text-xs leading-6 text-muted-foreground">{noticeSecondary}</p>
+            </div>
             <p className="mt-3 inline-flex rounded-full border border-border px-3 py-1 text-xs font-bold text-foreground">
               العلامة المائية: {watermarkText}
             </p>
