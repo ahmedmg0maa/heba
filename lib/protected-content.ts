@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto"
 import type { NextRequest } from "next/server"
+import { extractGoogleDriveFileId } from "@/lib/google-drive"
 import {
+  FieldValue,
   addDocument,
   getDocument,
   getFirebaseStorageBucket,
@@ -33,9 +35,14 @@ type AccessDenied = {
 type AccessGranted = {
   ok: true
   status: number
+  resolvedProductId: string
+  resolvedProductSlug: string
+  productTitle: string
   resourceUrl: string
   signedUrl: string
   contentKind: "video" | "pdf" | "file"
+  previewable: boolean
+  openLabel: string
   expiresAt: string
   user: {
     userId: string
@@ -47,6 +54,13 @@ type AccessGranted = {
 }
 
 export type ProtectedContentResult = AccessDenied | AccessGranted
+
+type ResolvedProduct = {
+  id: string
+  slug: string
+  title: string
+  resourceUrl: string
+}
 
 function text(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
@@ -139,40 +153,151 @@ function parseFirebaseStoragePath(url: string, bucketName?: string | null) {
   }
 }
 
-async function findPaidOrder(productType: ProtectedProductType, productId: string, userId: string, email: string) {
+function isDevelopment() {
+  return process.env.NODE_ENV !== "production"
+}
+
+function logBookAccessDebug(details: {
+  userId: string
+  requestedBookParam: string
+  resolvedBookId: string
+  matchingPaidOrderFound: boolean
+}) {
+  if (!isDevelopment()) return
+  console.debug("[protected-book-access]", details)
+}
+
+function normalizeDriveResourceUrl(url: string, mode: "download" | "stream") {
+  const fileId = extractGoogleDriveFileId(url)
+  if (!fileId) return { normalizedUrl: url, previewable: false }
+
+  if (mode === "download") {
+    return {
+      normalizedUrl: `https://drive.google.com/uc?export=download&id=${fileId}`,
+      previewable: false,
+    }
+  }
+
+  return {
+    normalizedUrl: `https://drive.google.com/file/d/${fileId}/preview`,
+    previewable: true,
+  }
+}
+
+async function resolveProduct(productType: ProtectedProductType, requestedParam: string): Promise<ResolvedProduct | null> {
+  const collectionName = productType === "book" ? "books" : "courses"
+  const resourceField = productType === "book" ? "fileUrl" : "accessUrl"
+  const normalizedParam = text(requestedParam)
+  if (!normalizedParam) return null
+
+  const byId = await getDocument(collectionName, normalizedParam)
+  if (byId) {
+    return {
+      id: text(byId.id),
+      slug: text(byId.slug) || text(byId.id),
+      title: text(byId.title) || text(byId.slug) || text(byId.id),
+      resourceUrl: text(byId[resourceField]),
+    }
+  }
+
+  const bySlug = await listDocuments(collectionName, {
+    whereClauses: [{ field: "slug", value: normalizedParam }],
+    limit: 1,
+  })
+  if (!bySlug.length) return null
+
+  const item = bySlug[0]
+  return {
+    id: text(item.id),
+    slug: text(item.slug) || text(item.id),
+    title: text(item.title) || text(item.slug) || text(item.id),
+    resourceUrl: text(item[resourceField]),
+  }
+}
+
+async function listPaidOrdersByIdentity(userId: string, emailCandidates: string[]) {
   const whereByUser = [
-    { field: "productType", value: productType },
-    { field: "productId", value: productId },
     { field: "status", value: "paid" },
     { field: "userId", value: userId },
   ]
-  const whereByEmail = email
-    ? [
-        { field: "productType", value: productType },
-        { field: "productId", value: productId },
+
+  const emailQueries = Array.from(new Set(emailCandidates.map((item) => item.trim()).filter(Boolean))).map((email) =>
+    listDocuments("orders", {
+      whereClauses: [
         { field: "status", value: "paid" },
         { field: "email", value: email },
-      ]
-    : []
+      ],
+      orderByField: "createdAt",
+      orderDirection: "desc",
+      limit: 100,
+    }),
+  )
 
-  const [ordersByUser, ordersByEmail] = await Promise.all([
-    listDocuments("orders", { whereClauses: whereByUser, orderByField: "createdAt", orderDirection: "desc", limit: 50 }),
-    whereByEmail.length
-      ? listDocuments("orders", { whereClauses: whereByEmail, orderByField: "createdAt", orderDirection: "desc", limit: 50 })
-      : Promise.resolve([]),
+  const [ordersByUser, ...ordersByEmailGroups] = await Promise.all([
+    listDocuments("orders", { whereClauses: whereByUser, orderByField: "createdAt", orderDirection: "desc", limit: 100 }),
+    ...emailQueries,
   ])
+  const ordersByEmail = ordersByEmailGroups.flat()
 
   const merged = [...ordersByUser, ...ordersByEmail]
-  if (!merged.length) return null
   const unique = new Map<string, (typeof merged)[number]>()
-  for (const item of merged) unique.set(String(item.id), item)
-  const orders = Array.from(unique.values())
-  orders.sort((a, b) => {
+  for (const order of merged) unique.set(String(order.id), order)
+  return Array.from(unique.values())
+}
+
+function matchesPaidOwnership(options: {
+  order: Record<string, unknown>
+  productType: ProtectedProductType
+  resolvedProductId: string
+  resolvedSlug: string
+}) {
+  const { order, productType, resolvedProductId, resolvedSlug } = options
+  const orderStatus = text(order.status).toLowerCase()
+  const orderType = text(order.productType).toLowerCase()
+  if (orderStatus !== "paid") return false
+  if (orderType !== productType) return false
+
+  const orderProductId = text(order.productId)
+  const orderProductSlug = text(order.productSlug)
+  const orderItemId = text(order.itemId)
+
+  if (productType === "book") {
+    return (
+      orderProductId === resolvedProductId ||
+      (resolvedSlug && orderProductId === resolvedSlug) ||
+      (resolvedSlug && orderProductSlug === resolvedSlug) ||
+      orderItemId === resolvedProductId
+    )
+  }
+
+  return orderProductId === resolvedProductId
+}
+
+async function findPaidOrderForProduct(options: {
+  productType: ProtectedProductType
+  userId: string
+  emails: string[]
+  resolvedProductId: string
+  resolvedSlug: string
+}) {
+  const { productType, userId, emails, resolvedProductId, resolvedSlug } = options
+  const paidOrders = await listPaidOrdersByIdentity(userId, emails)
+  const matching = paidOrders.filter((order) =>
+    matchesPaidOwnership({
+      order,
+      productType,
+      resolvedProductId,
+      resolvedSlug,
+    }),
+  )
+
+  matching.sort((a, b) => {
     const aDate = parseDate(a.createdAt)?.getTime() || 0
     const bDate = parseDate(b.createdAt)?.getTime() || 0
     return bDate - aDate
   })
-  return orders[0] || null
+
+  return matching[0] || null
 }
 
 async function evaluateSessionRisk(options: {
@@ -244,8 +369,7 @@ async function logProtectedAccess(options: {
   productId: string
   productType: ProtectedProductType
   orderId: string
-  action: "stream" | "download" | "deny"
-  allowed: boolean
+  action: "stream" | "download"
   reason?: string
   suspicious?: boolean
   deviceHash?: string
@@ -258,31 +382,82 @@ async function logProtectedAccess(options: {
     productType,
     orderId,
     action,
-    allowed,
     reason = "",
     suspicious = false,
     deviceHash = "",
   } = options
   const ip = getClientIp(request)
   const userAgent = text(request.headers.get("user-agent"))
-  const nowIso = new Date().toISOString()
-  await addDocument("protected_access_logs", {
-    userId,
-    email,
-    productId,
-    productType,
-    orderId,
-    action,
-    timestamp: nowIso,
-    ip,
+  const required = {
+    userId: text(userId),
+    email: normalizeEmail(email),
+    productId: text(productId),
+    productType: text(productType).toLowerCase(),
+    action: text(action).toLowerCase(),
     userAgent,
-    deviceHash,
-    allowed,
-    reason,
-    suspicious,
-    createdAt: nowIso,
-    updatedAt: nowIso,
-  })
+  }
+
+  if (!required.userId || !required.email || !required.productId || !required.productType || !required.action || !required.userAgent) {
+    console.warn("[protected_access_logs] skipped write: missing required fields", {
+      userId: required.userId,
+      email: required.email,
+      productId: required.productId,
+      productType: required.productType,
+      action: required.action,
+      userAgentPresent: Boolean(required.userAgent),
+    })
+    return
+  }
+
+  if (required.productType !== "book" && required.productType !== "course") {
+    console.warn("[protected_access_logs] skipped write: invalid productType", {
+      userId: required.userId,
+      productId: required.productId,
+      productType: required.productType,
+    })
+    return
+  }
+
+  if (required.action !== "stream" && required.action !== "download") {
+    console.warn("[protected_access_logs] skipped write: invalid action", {
+      userId: required.userId,
+      productId: required.productId,
+      action: required.action,
+    })
+    return
+  }
+
+  const payload: Record<string, unknown> = {
+    userId: required.userId,
+    email: required.email,
+    productId: required.productId,
+    productType: required.productType,
+    orderId: text(orderId),
+    action: required.action,
+    timestamp: FieldValue.serverTimestamp(),
+    userAgent: required.userAgent,
+    deviceHash: text(deviceHash),
+    reason: text(reason),
+    suspicious: Boolean(suspicious),
+    allowed: true,
+  }
+  if (ip) payload.ip = ip
+
+  if (Object.keys(payload).length === 0) {
+    console.warn("[protected_access_logs] prevented empty payload write")
+    return
+  }
+
+  const write = await addDocument("protected_access_logs", payload)
+  if (!write.ok || !write.id) {
+    console.warn("[protected_access_logs] write failed", {
+      userId: required.userId,
+      productId: required.productId,
+      action: required.action,
+      error: write.error || "UNKNOWN",
+      message: write.message || "",
+    })
+  }
 }
 
 async function countRecentAccesses(userId: string, productType: ProtectedProductType, productId: string) {
@@ -316,99 +491,78 @@ export async function resolveProtectedContentAccess(options: ResolveOptions): Pr
   }
 
   const userId = text(authResult.decoded.uid)
-  const email = normalizeEmail(text(authResult.decoded.email || ""))
+  const rawEmail = text(authResult.decoded.email || "")
+  const email = normalizeEmail(rawEmail)
   if (!userId) {
     return { ok: false, status: 401, message: "لا يمكن التحقق من هوية المستخدم." }
   }
 
-  const normalizedProductId = text(productId)
-  if (!normalizedProductId) {
+  const requestedProductParam = text(productId)
+  if (!requestedProductParam) {
     return { ok: false, status: 400, message: "معرّف المحتوى غير صالح." }
   }
 
-  const order = await findPaidOrder(productType, normalizedProductId, userId, email)
+  const resolvedProduct = await resolveProduct(productType, requestedProductParam)
+  if (!resolvedProduct) {
+    if (productType === "book") {
+      logBookAccessDebug({
+        userId,
+        requestedBookParam: requestedProductParam,
+        resolvedBookId: "",
+        matchingPaidOrderFound: false,
+      })
+    }
+    return { ok: false, status: 404, message: "تعذر العثور على هذا المحتوى." }
+  }
+
+  const resolvedProductId = text(resolvedProduct.id)
+  const resolvedProductSlug = text(resolvedProduct.slug)
+  if (!resolvedProductId) {
+    return { ok: false, status: 404, message: "تعذر العثور على هذا المحتوى." }
+  }
+
+  const order = await findPaidOrderForProduct({
+    productType,
+    userId,
+    emails: [rawEmail, email],
+    resolvedProductId,
+    resolvedSlug: resolvedProductSlug,
+  })
+
   if (!order) {
-    await logProtectedAccess({
-      request,
-      userId,
-      email,
-      productId: normalizedProductId,
-      productType,
-      orderId: "",
-      action: "deny",
-      allowed: false,
-      reason: "no_paid_ownership",
-      suspicious: true,
-    })
-    return { ok: false, status: 403, message: "هذا المحتوى متاح فقط بعد الدفع وتفعيل الطلب." }
+    if (productType === "book") {
+      logBookAccessDebug({
+        userId,
+        requestedBookParam: requestedProductParam,
+        resolvedBookId: resolvedProductId,
+        matchingPaidOrderFound: false,
+      })
+    }
+    return { ok: false, status: 403, message: "هذا المحتوى متاح بعد تأكيد الدفع وتفعيل الوصول." }
   }
 
   const deviceHash = getDeviceFingerprintHash(request)
   const sessionRisk = await evaluateSessionRisk({
     userId,
     email,
-    productId: normalizedProductId,
+    productId: resolvedProductId,
     productType,
     deviceHash,
   })
 
   if (!sessionRisk.ok) {
-    await logProtectedAccess({
-      request,
-      userId,
-      email,
-      productId: normalizedProductId,
-      productType,
-      orderId: String(order.id),
-      action: "deny",
-      allowed: false,
-      reason: "device_limit_reached",
-      suspicious: true,
-      deviceHash,
-    })
     return { ok: false, status: 429, message: sessionRisk.message }
   }
 
-  const collectionName = productType === "book" ? "books" : "courses"
-  const product = await getDocument(collectionName, normalizedProductId)
-  if (!product) {
-    await logProtectedAccess({
-      request,
-      userId,
-      email,
-      productId: normalizedProductId,
-      productType,
-      orderId: String(order.id),
-      action: "deny",
-      allowed: false,
-      reason: "product_not_found",
-      suspicious: true,
-      deviceHash,
-    })
-    return { ok: false, status: 404, message: "تعذر العثور على هذا المحتوى." }
-  }
-
-  const resourceUrl = text(productType === "book" ? product.fileUrl : product.accessUrl)
+  const resourceUrl = text(resolvedProduct.resourceUrl)
   if (!resourceUrl) {
-    await logProtectedAccess({
-      request,
-      userId,
-      email,
-      productId: normalizedProductId,
-      productType,
-      orderId: String(order.id),
-      action: "deny",
-      allowed: false,
-      reason: "missing_resource_url",
-      suspicious: true,
-      deviceHash,
-    })
-    return { ok: false, status: 404, message: "سيتم تفعيل الوصول قريبًا، ويمكنك التواصل مع الدعم." }
+    return { ok: false, status: 404, message: "تم تأكيد وصولك، وسيتم تفعيل رابط الكتاب قريبًا. يمكنك التواصل مع الدعم للمساعدة." }
   }
 
   const bucket = getFirebaseStorageBucket()
   const objectPath = parseFirebaseStoragePath(resourceUrl, bucket?.name || null)
   let signedUrl = ""
+  let previewable = false
 
   if (bucket && objectPath) {
     try {
@@ -420,52 +574,51 @@ export async function resolveProtectedContentAccess(options: ResolveOptions): Pr
         responseDisposition: mode === "download" ? "attachment" : "inline",
       })
       signedUrl = url
+      const kind = detectContentKind(resourceUrl)
+      previewable = mode === "stream" && (kind === "pdf" || kind === "video")
     } catch (error) {
       console.error("Failed to generate signed URL:", error)
       return { ok: false, status: 500, message: "تعذر إنشاء رابط آمن للمحتوى الآن." }
     }
   } else if (/^https:\/\//i.test(resourceUrl)) {
-    signedUrl = resourceUrl
+    const driveNormalized = normalizeDriveResourceUrl(resourceUrl, mode)
+    signedUrl = driveNormalized.normalizedUrl
+    previewable = mode === "stream" && (driveNormalized.previewable || detectContentKind(resourceUrl) === "pdf")
   } else {
-    await logProtectedAccess({
-      request,
-      userId,
-      email,
-      productId: normalizedProductId,
-      productType,
-      orderId: String(order.id),
-      action: "deny",
-      allowed: false,
-      reason: "insecure_or_unrecognized_storage_url",
-      suspicious: true,
-      deviceHash,
-    })
-    return { ok: false, status: 503, message: "سيتم تفعيل الوصول قريبًا، ويمكنك التواصل مع الدعم." }
+    return { ok: false, status: 503, message: "تم تأكيد وصولك، وسيتم تفعيل رابط الكتاب قريبًا. يمكنك التواصل مع الدعم للمساعدة." }
   }
 
-  const recentAccessCount = await countRecentAccesses(userId, productType, normalizedProductId)
+  const recentAccessCount = await countRecentAccesses(userId, productType, resolvedProductId)
   const suspicious = recentAccessCount >= RECENT_ACCESS_LIMIT_PER_HOUR
 
   await logProtectedAccess({
     request,
     userId,
     email,
-    productId: normalizedProductId,
+    productId: resolvedProductId,
     productType,
     orderId: String(order.id),
     action: mode === "download" ? "download" : "stream",
-    allowed: true,
     reason: signedUrl === resourceUrl ? "external_source" : "signed_url",
     suspicious,
     deviceHash,
   })
 
+  const contentKind = detectContentKind(resourceUrl)
+  const openLabel =
+    productType === "book" ? (previewable ? "عرض الكتاب" : "فتح الرابط الآمن") : "فتح المحتوى"
+
   return {
     ok: true,
     status: 200,
+    resolvedProductId,
+    resolvedProductSlug,
+    productTitle: resolvedProduct.title,
     resourceUrl,
     signedUrl,
-    contentKind: detectContentKind(resourceUrl),
+    contentKind,
+    previewable,
+    openLabel,
     expiresAt: new Date(Date.now() + SIGNED_URL_TTL_MS).toISOString(),
     user: { userId, email },
     ownership: { orderId: String(order.id) },
