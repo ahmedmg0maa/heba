@@ -35,6 +35,8 @@ type UserOrder = {
   orderNumber?: string
   productType: "course" | "book" | string
   productId: string
+  productSlug?: string
+  itemId?: string
   productTitle: string
   amount: number
   status: string
@@ -111,14 +113,31 @@ function mergeById<T extends { id: string }>(first: T[], second: T[]) {
   return Array.from(map.values())
 }
 
+function resolvePaidBookId(order: UserOrder, keyToBookId: Record<string, string>) {
+  const itemId = String(order.itemId || "").trim()
+  if (itemId) return itemId
+
+  const productId = String(order.productId || "").trim()
+  if (productId && keyToBookId[productId]) return keyToBookId[productId]
+  if (productId) return productId
+
+  const productSlug = String(order.productSlug || "").trim()
+  if (productSlug && keyToBookId[productSlug]) return keyToBookId[productSlug]
+  if (productSlug) return productSlug
+
+  return ""
+}
+
 function mapOrdersFromSnapshot(snapshot: Awaited<ReturnType<typeof getDocs>>) {
   return snapshot.docs.map((item) => {
     const data = item.data() as Record<string, unknown>
     return {
       id: item.id,
       orderNumber: String(data.orderNumber || ""),
-      productType: String(data.productType || ""),
-      productId: String(data.productId || ""),
+      productType: String(data.productType || "").toLowerCase(),
+      productId: String(data.productId || "").trim(),
+      productSlug: String(data.productSlug || "").trim(),
+      itemId: String(data.itemId || "").trim(),
       productTitle: String(data.productTitle || ""),
       amount: toNumber(data.amount),
       status: String(data.status || "pending").toLowerCase(),
@@ -151,6 +170,7 @@ export default function AccountPage() {
   const [profile, setProfile] = useState<AccountUser | null>(null)
   const [orders, setOrders] = useState<UserOrder[]>([])
   const [bookings, setBookings] = useState<UserBooking[]>([])
+  const [bookLookup, setBookLookup] = useState<Record<string, string>>({})
   const [loadingData, setLoadingData] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [downloadingOrderId, setDownloadingOrderId] = useState<string | null>(null)
@@ -175,6 +195,37 @@ export default function AccountPage() {
     const message = `مرحبًا، أحتاج مساعدة في حسابي.${latestOrderId ? ` رقم الطلب: ${latestOrderId}.` : ""}${latestBookingId ? ` رقم الحجز: ${latestBookingId}.` : ""}`
     return buildWhatsAppUrl(message)
   }, [bookings, orders])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadBookLookup() {
+      try {
+        const response = await fetch("/api/catalog", { cache: "no-store" })
+        const result = await response.json()
+        if (!response.ok || !result?.ok || !Array.isArray(result.books)) return
+
+        const lookup: Record<string, string> = {}
+        for (const rawBook of result.books as Array<Record<string, unknown>>) {
+          const id = String(rawBook.id || "").trim()
+          const slug = String(rawBook.slug || "").trim()
+          if (!id) continue
+          lookup[id] = id
+          if (slug) lookup[slug] = id
+        }
+
+        if (!cancelled) setBookLookup(lookup)
+      } catch {
+        if (!cancelled) setBookLookup({})
+      }
+    }
+
+    void loadBookLookup()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     if (!hasFirebasePublicConfig()) {
@@ -649,10 +700,10 @@ export default function AccountPage() {
                         {orderStatusLabel(item.status)} · {item.amount.toLocaleString("ar-EG")} EGP
                       </p>
                       <div className="mt-3 flex flex-wrap gap-2">
-                        <Link href={`/books/${item.productId}`} className="inline-flex text-sm font-bold text-primary">
+                        <Link href={`/books/${resolvePaidBookId(item, bookLookup) || item.productId}`} className="inline-flex text-sm font-bold text-primary">
                           عرض الكتاب
                         </Link>
-                        <Link href={`/account/protected/book/${item.productId}`} className="inline-flex items-center gap-1 text-sm font-bold text-primary">
+                        <Link href={`/account/protected/book/${resolvePaidBookId(item, bookLookup) || item.productId}`} className="inline-flex items-center gap-1 text-sm font-bold text-primary">
                           فتح الكتاب المحمي
                           <ExternalLink className="h-3.5 w-3.5" />
                         </Link>

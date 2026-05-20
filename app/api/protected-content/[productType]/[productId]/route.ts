@@ -63,12 +63,18 @@ export async function GET(request: NextRequest, context: RouteContext) {
   return NextResponse.json({
     ok: true,
     productType: normalizedType,
-    productId,
+    productId: resolved.resolvedProductId,
+    requestedProductId: productId,
+    productTitle: resolved.productTitle,
     url: resolved.signedUrl,
     expiresAt: resolved.expiresAt,
     contentKind: resolved.contentKind,
-    legalNotice:
-      "هذا المحتوى مخصص للاستخدام الشخصي فقط. أي تصوير أو تسجيل أو إعادة نشر يعرض الحساب للإيقاف والمساءلة القانونية.",
+    previewable: resolved.previewable,
+    openLabel: resolved.openLabel,
+    legalNoticePrimary:
+      "هذا المحتوى مخصص لاستخدامك الشخصي فقط. يُمنع تصويره أو تسجيله أو مشاركته أو إعادة نشره بأي شكل.",
+    legalNoticeSecondary:
+      "حفاظًا على حقوق الملكية، قد تظهر علامة مائية مرتبطة بحسابك أثناء عرض المحتوى.",
     trace: {
       userId: resolved.user.userId,
       email: resolved.user.email,
@@ -76,4 +82,3 @@ export async function GET(request: NextRequest, context: RouteContext) {
     },
   })
 }
-

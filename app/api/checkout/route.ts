@@ -54,7 +54,7 @@ export async function POST(request: Request) {
     }
 
     let resolvedProduct:
-      | { id: string; title: string; price: number; status: string; type: "course" | "book" }
+      | { id: string; slug: string; title: string; price: number; status: string; type: "course" | "book" }
       | null = null
 
     if (productType === "course") {
@@ -62,6 +62,7 @@ export async function POST(request: Request) {
       if (course) {
         resolvedProduct = {
           id: course.id,
+          slug: course.slug || course.id,
           title: course.title,
           price: course.price,
           status: course.status,
@@ -75,6 +76,7 @@ export async function POST(request: Request) {
       if (book) {
         resolvedProduct = {
           id: book.id,
+          slug: book.slug || book.id,
           title: book.title,
           price: book.price,
           status: book.status,
@@ -92,6 +94,8 @@ export async function POST(request: Request) {
     const payload: Record<string, unknown> = {
       orderNumber,
       productId: resolvedProduct.id,
+      itemId: resolvedProduct.id,
+      productSlug: resolvedProduct.slug,
       productType: resolvedProduct.type,
       productTitle: resolvedProduct.title,
       amount: resolvedProduct.price,

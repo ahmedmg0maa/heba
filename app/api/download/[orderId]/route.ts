@@ -56,7 +56,7 @@ export async function GET(request: NextRequest, context: RouteContext) {
     return NextResponse.json({ ok: false, message: "هذا الطلب ليس كتابًا قابلًا للتحميل." }, { status: 400 })
   }
 
-  const productId = text(order.productId)
+  const productId = text(order.productId) || text(order.itemId) || text(order.productSlug)
   if (!productId) {
     return NextResponse.json({ ok: false, message: "بيانات المنتج غير مكتملة." }, { status: 400 })
   }
@@ -75,4 +75,3 @@ export async function GET(request: NextRequest, context: RouteContext) {
 
   return NextResponse.redirect(resolved.signedUrl, { status: 302 })
 }
-
