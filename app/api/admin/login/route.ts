@@ -1,5 +1,4 @@
 import { timingSafeEqual } from "node:crypto"
-import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import { ADMIN_COOKIE_NAME, createAdminSession, requireAdmin } from "@/lib/admin-session"
 
@@ -16,6 +15,10 @@ function text(value: unknown) {
 
 function getConfiguredAdminPassword() {
   return (process.env.ADMIN_PASSWORD || "").trim()
+}
+
+function hasAdminSessionSecret() {
+  return Boolean((process.env.ADMIN_SESSION_SECRET || "").trim())
 }
 
 function safeEqual(a: string, b: string) {
@@ -62,13 +65,24 @@ function clearFailures(ip: string) {
   loginAttempts.delete(ip)
 }
 
+function debugLoginLog(payload: {
+  passwordProvided: boolean
+  envPasswordExists: boolean
+  sessionSecretExists: boolean
+  cookieSet: boolean
+}) {
+  if (process.env.NODE_ENV !== "development") return
+  console.info("[admin-login]", payload)
+}
+
 export async function POST(request: Request) {
   const admin = await requireAdmin()
   if (admin.ok) {
     return NextResponse.json({ ok: true })
   }
 
-  if (!getConfiguredAdminPassword()) {
+  const configuredPassword = getConfiguredAdminPassword()
+  if (!configuredPassword) {
     return NextResponse.json({ ok: false, message: "لم يتم تفعيل لوحة الإدارة بعد." }, { status: 503 })
   }
 
@@ -88,6 +102,13 @@ export async function POST(request: Request) {
   }
 
   const password = text(body.password)
+  debugLoginLog({
+    passwordProvided: Boolean(password),
+    envPasswordExists: Boolean(configuredPassword),
+    sessionSecretExists: hasAdminSessionSecret(),
+    cookieSet: false,
+  })
+
   if (!password || !isValidAdminPassword(password)) {
     registerFailure(ip)
     return NextResponse.json({ ok: false, message: "كلمة المرور غير صحيحة." }, { status: 401 })
@@ -100,18 +121,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, message: "تعذر تهيئة جلسة الإدارة. راجعي إعدادات الخادم." }, { status: 503 })
   }
 
-  const cookieStore = await cookies()
-  cookieStore.delete({
+  const response = NextResponse.json({ ok: true })
+  response.cookies.set({
     name: ADMIN_COOKIE_NAME,
-    path: "/",
-  })
-  cookieStore.set(ADMIN_COOKIE_NAME, session.token, {
+    value: session.token,
     httpOnly: true,
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
     maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
   })
+  debugLoginLog({
+    passwordProvided: Boolean(password),
+    envPasswordExists: Boolean(configuredPassword),
+    sessionSecretExists: hasAdminSessionSecret(),
+    cookieSet: true,
+  })
 
-  return NextResponse.json({ ok: true })
+  return response
 }

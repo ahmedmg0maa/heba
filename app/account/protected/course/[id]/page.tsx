@@ -2,7 +2,7 @@ import Link from "next/link"
 import { ArrowRight } from "lucide-react"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
-import { ProtectedContentViewer } from "@/components/protection/protected-content-viewer"
+import { ProtectedCourseLearning } from "@/components/protection/protected-course-learning"
 
 type PageProps = { params: Promise<{ id: string }> }
 
@@ -20,12 +20,11 @@ export default async function ProtectedCoursePage({ params }: PageProps) {
             <ArrowRight className="h-4 w-4" />
             العودة إلى الحساب
           </Link>
-          <h1 className="text-3xl font-black text-foreground">عارض الكورس المحمي</h1>
-          <ProtectedContentViewer productType="course" productId={id} title={`course-${id}`} />
+          <h1 className="text-3xl font-black text-foreground">رحلة التعلم</h1>
+          <ProtectedCourseLearning courseId={id} />
         </div>
       </main>
       <Footer />
     </>
   )
 }
-

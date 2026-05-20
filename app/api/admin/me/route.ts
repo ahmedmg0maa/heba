@@ -4,14 +4,34 @@ import { ADMIN_COOKIE_NAME, verifyAdminSession } from "@/lib/admin-session"
 
 export const runtime = "nodejs"
 
+function debugMeLog(payload: { cookieExists: boolean; verified: boolean; reason: string }) {
+  if (process.env.NODE_ENV !== "development") return
+  console.info("[admin-me]", payload)
+}
+
 export async function GET() {
   const token = (await cookies()).get(ADMIN_COOKIE_NAME)?.value
   const verification = await verifyAdminSession(token)
+  debugMeLog({
+    cookieExists: Boolean(token),
+    verified: verification.ok,
+    reason: verification.reason,
+  })
 
-  return NextResponse.json({
+  const payload: {
+    authenticated: boolean
+    cookieExists: boolean
+    cookieName: string
+    reason?: string
+  } = {
     authenticated: verification.ok,
     cookieExists: Boolean(token),
     cookieName: ADMIN_COOKIE_NAME,
-    reason: verification.reason,
-  })
+  }
+
+  if (!verification.ok) {
+    payload.reason = verification.reason
+  }
+
+  return NextResponse.json(payload)
 }

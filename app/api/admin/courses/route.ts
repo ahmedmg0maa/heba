@@ -30,6 +30,39 @@ function toSlug(value: string) {
     .replace(/-+/g, "-")
 }
 
+function asBoolean(value: unknown) {
+  return value === true
+}
+
+function normalizeLessons(value: unknown, courseId: string) {
+  if (!Array.isArray(value)) return undefined
+
+  const lessons = value
+    .map((item, index) => {
+      if (!item || typeof item !== "object") return null
+      const raw = item as Record<string, unknown>
+      const lessonId = toSlug(asText(raw.id) || `${courseId}-lesson-${index + 1}`)
+      const title = asText(raw.title)
+      const contentUrl = normalizeGoogleDriveResourceUrl(asText(raw.contentUrl || raw.videoUrl))
+      if (!lessonId || !title || !contentUrl) return null
+
+      return {
+        id: lessonId,
+        courseId,
+        title,
+        description: asText(raw.description),
+        videoUrl: normalizeGoogleDriveResourceUrl(asText(raw.videoUrl)),
+        contentUrl,
+        duration: asText(raw.duration),
+        order: asNumber(raw.order) || index + 1,
+        isPreview: asBoolean(raw.isPreview),
+      }
+    })
+    .filter(Boolean)
+
+  return lessons.length ? lessons : []
+}
+
 export async function GET() {
   const admin = await requireAdmin()
   if (!admin.ok) {
@@ -69,6 +102,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, message: "هذا المعرف مستخدم بالفعل." }, { status: 409 })
   }
 
+  const normalizedLessons = normalizeLessons(body.lessons, id)
   const now = new Date().toISOString()
   const payload = {
     id,
@@ -84,6 +118,11 @@ export async function POST(request: Request) {
     accessUrl: normalizeGoogleDriveResourceUrl(asText(body.accessUrl)),
     createdAt: now,
     updatedAt: now,
+    ...(normalizedLessons ? { lessons: normalizedLessons } : {}),
+  }
+
+  if (Array.isArray(payload.lessons) && payload.lessons.length > 0 && payload.lessonsCount === 0) {
+    payload.lessonsCount = payload.lessons.length
   }
 
   const result = await setDocument("courses", id, payload, false)

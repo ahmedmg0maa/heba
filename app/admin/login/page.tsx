@@ -52,15 +52,22 @@ export default function AdminLoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
       })
-      const result = await response.json()
+      let result: { ok?: boolean; message?: string } = {}
+      try {
+        result = (await response.json()) as { ok?: boolean; message?: string }
+      } catch {
+        // keep result empty and use fallback error
+      }
       if (!response.ok || !result.ok) {
-        throw new Error(result.message || "تعذر تسجيل الدخول.")
+        throw new Error(result.message || "تعذر تسجيل الدخول. تأكدي من كلمة المرور ثم حاولي مرة أخرى.")
       }
       setError("")
-      router.push("/admin")
+      router.replace("/admin")
       router.refresh()
     } catch (loginError) {
-      setError(loginError instanceof Error ? loginError.message : "تعذر تسجيل الدخول.")
+      setError(
+        loginError instanceof Error ? loginError.message : "تعذر تسجيل الدخول. تأكدي من كلمة المرور ثم حاولي مرة أخرى.",
+      )
     } finally {
       setLoading(false)
     }

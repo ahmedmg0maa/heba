@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { notFound } from "next/navigation"
-import { ArrowLeft, Calendar, Clock, Share2 } from "lucide-react"
+import { ArrowLeft, Calendar, Clock } from "lucide-react"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
@@ -48,9 +48,12 @@ export default async function BlogPostPage({ params }: PageProps) {
                 <blockquote>كل شعور لا نسمعه يتحول إلى ضجيج. وكل شعور نسمعه يتحول إلى رسالة.</blockquote>
                 <p>بعدها اختاري خطوة واحدة صغيرة: راحة، محادثة صادقة، حدود أو طلب دعم. التغيير الحقيقي لا يبدأ من قرارات ضخمة، بل من أفعال صغيرة تتكرر بوعي.</p>
               </div>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <Button variant="outline" className="rounded-full"><Share2 className="h-4 w-4" /> مشاركة المقال</Button>
-                <Link href="/booking"><Button className="rounded-full bg-[var(--burgundy)] text-primary-foreground hover:bg-[var(--burgundy)]/90">احجزي جلسة فهم أعمق</Button></Link>
+              <div className="mt-8 flex justify-start">
+                <Link href="/booking">
+                  <Button className="rounded-full bg-[var(--burgundy)] text-primary-foreground hover:bg-[var(--burgundy)]/90">
+                    احجزي جلسة فهم أعمق
+                  </Button>
+                </Link>
               </div>
             </div>
           </section>

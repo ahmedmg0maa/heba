@@ -18,6 +18,7 @@ import { Footer } from "@/components/layout/footer"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getFirebaseClientAuth, getFirebaseClientDb, hasFirebasePublicConfig } from "@/lib/firebase/client"
 import { buildWhatsAppUrl } from "@/lib/support"
@@ -64,6 +65,16 @@ type AccountSummaryResponse = {
   bookings?: UserBooking[]
   paidBooks?: UserOrder[]
   paidCourses?: UserOrder[]
+}
+
+type CourseProgressSummary = {
+  courseId: string
+  courseTitle?: string
+  progressPercent: number
+  completedLessonsCount: number
+  totalLessons: number
+  lastLessonId: string
+  updatedAt: string
 }
 
 function text(value: unknown) {
@@ -116,6 +127,8 @@ export default function AccountPage() {
   const [bookings, setBookings] = useState<UserBooking[]>([])
   const [paidBooks, setPaidBooks] = useState<UserOrder[]>([])
   const [paidCourses, setPaidCourses] = useState<UserOrder[]>([])
+  const [courseProgressMap, setCourseProgressMap] = useState<Record<string, CourseProgressSummary>>({})
+  const [loadingCourseProgress, setLoadingCourseProgress] = useState(false)
   const [loadingData, setLoadingData] = useState(false)
   const [actionLoading, setActionLoading] = useState(false)
   const [error, setError] = useState("")
@@ -204,12 +217,59 @@ export default function AccountPage() {
       setBookings([])
       setPaidBooks([])
       setPaidCourses([])
+      setCourseProgressMap({})
+      setLoadingCourseProgress(false)
       setProfilePhone("")
       return
     }
 
     void loadSummary(currentUser)
   }, [currentUser])
+
+  useEffect(() => {
+    async function loadCourseProgress(user: User, courseIds: string[]) {
+      setLoadingCourseProgress(true)
+      try {
+        const token = await user.getIdToken()
+        const response = await fetch(`/api/account/course-progress?courseIds=${encodeURIComponent(courseIds.join(","))}`, {
+          method: "GET",
+          cache: "no-store",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        const result = (await response.json()) as { ok: boolean; progress?: CourseProgressSummary[]; message?: string }
+        if (!response.ok || !result.ok) {
+          throw new Error(result.message || "تعذر تحميل تقدم الكورسات الآن.")
+        }
+
+        const progressItems = Array.isArray(result.progress) ? result.progress : []
+        const nextMap: Record<string, CourseProgressSummary> = {}
+        for (const item of progressItems) {
+          const key = text(item.courseId)
+          if (!key) continue
+          nextMap[key] = item
+        }
+        setCourseProgressMap(nextMap)
+      } catch (progressError) {
+        console.error("[account] failed to load course progress:", progressError)
+        setCourseProgressMap({})
+      } finally {
+        setLoadingCourseProgress(false)
+      }
+    }
+
+    if (!currentUser) return
+
+    const courseIds = Array.from(new Set(paidCourses.map((item) => text(item.productId)).filter(Boolean)))
+    if (!courseIds.length) {
+      setCourseProgressMap({})
+      setLoadingCourseProgress(false)
+      return
+    }
+
+    void loadCourseProgress(currentUser, courseIds)
+  }, [currentUser, paidCourses])
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -551,22 +611,37 @@ export default function AccountPage() {
                 </div>
               ) : null}
               <div className="mt-4 grid gap-3">
-                {paidCourses.map((item) => (
-                  <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
+                {paidCourses.map((item) => {
+                  const progress = courseProgressMap[text(item.productId)] || null
+                  const progressPercent = progress?.progressPercent ?? 0
+                  const completedLessons = progress?.completedLessonsCount ?? 0
+                  const totalLessons = progress?.totalLessons ?? 0
+
+                  return (
+                    <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
                     <p className="font-bold text-foreground">{item.productTitle}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {orderStatusLabel(item.status)} · {toNumber(item.amount).toLocaleString("ar-EG")} EGP
                     </p>
+                    <div className="mt-3 rounded-xl border border-border/80 bg-card px-3 py-2">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>{loadingCourseProgress ? "جاري التحديث..." : `${completedLessons} / ${totalLessons || 0} دروس`}</span>
+                        <span className="font-bold text-foreground">{progressPercent}%</span>
+                      </div>
+                      <Progress value={progressPercent} className="mt-2 h-1.5 rounded-full" />
+                    </div>
+
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Link href={`/account/protected/course/${item.productId}`} className="inline-flex text-sm font-bold text-primary">
-                        عرض الكورس
+                        متابعة التعلم
                       </Link>
                       <Link href={`/courses/${item.productId}`} className="text-sm text-muted-foreground hover:text-primary">
                         تفاصيل الكورس
                       </Link>
                     </div>
-                  </article>
-                ))}
+                    </article>
+                  )
+                })}
               </div>
             </section>
 
