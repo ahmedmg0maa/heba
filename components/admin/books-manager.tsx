@@ -62,6 +62,12 @@ function toNumber(value: unknown) {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
+function statusLabel(status: "active" | "draft" | "hidden") {
+  if (status === "active") return "نشط"
+  if (status === "draft") return "مسودة"
+  return "مخفي"
+}
+
 export function BooksManager() {
   const [items, setItems] = useState<BookRecord[]>([])
   const [loading, setLoading] = useState(true)
@@ -219,7 +225,7 @@ export function BooksManager() {
     <div className="space-y-6" dir="rtl">
       <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
         <h1 className="text-3xl font-black text-foreground">إدارة الكتب</h1>
-        <p className="mt-2 text-muted-foreground">إضافة وتعديل وحذف الكتب وإدارة روابط Google Drive بدون الاعتماد على Firebase Storage.</p>
+        <p className="mt-2 text-muted-foreground">إضافة وتعديل وحذف الكتب وإدارة روابط جوجل درايف بدون الاعتماد على Firebase Storage.</p>
       </section>
 
       <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
@@ -299,9 +305,9 @@ export function BooksManager() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">active</SelectItem>
-                  <SelectItem value="draft">draft</SelectItem>
-                  <SelectItem value="hidden">hidden</SelectItem>
+                  <SelectItem value="active">نشط</SelectItem>
+                  <SelectItem value="draft">مسودة</SelectItem>
+                  <SelectItem value="hidden">مخفي</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -319,7 +325,7 @@ export function BooksManager() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="book-file">رابط ملف الكتاب من Google Drive</Label>
+            <Label htmlFor="book-file">رابط ملف الكتاب من جوجل درايف</Label>
             <Input
               id="book-file"
               value={form.fileUrl}
@@ -328,7 +334,7 @@ export function BooksManager() {
               className="w-full"
             />
             <p className="rounded-xl border border-border bg-secondary/25 p-3 text-xs leading-6 text-muted-foreground break-words">
-              ارفعي الملف على Google Drive، ثم اجعلي المشاركة: أي شخص لديه الرابط يمكنه العرض، وبعدها ضعي الرابط هنا.
+              ارفعي الملف على جوجل درايف، ثم اجعلي المشاركة: أي شخص لديه الرابط يمكنه العرض، وبعدها ضعي الرابط هنا.
             </p>
           </div>
 
@@ -365,8 +371,11 @@ export function BooksManager() {
                 <div className="min-w-0">
                   <p className="font-bold text-foreground">{item.title}</p>
                   <p className="text-xs text-muted-foreground break-words">
-                    {item.slug} · {toNumber(item.price).toLocaleString("ar-EG")} EGP · {item.status}
+                    {item.slug} · {toNumber(item.price).toLocaleString("ar-EG")} ج.م · {statusLabel(item.status)}
                   </p>
+                  {item.fileUrl ? (
+                    <p className="mt-1 max-w-full break-all text-[11px] leading-5 text-muted-foreground">{item.fileUrl}</p>
+                  ) : null}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" size="sm" className="rounded-full" onClick={() => startEdit(item)}>
@@ -376,7 +385,7 @@ export function BooksManager() {
                     تفعيل
                   </Button>
                   <Button type="button" size="sm" variant="outline" className="rounded-full bg-transparent" onClick={() => changeStatus(item.id, "draft")}>
-                    Draft
+                    مسودة
                   </Button>
                   <Button type="button" size="sm" variant="outline" className="rounded-full bg-transparent" onClick={() => changeStatus(item.id, "hidden")}>
                     إخفاء

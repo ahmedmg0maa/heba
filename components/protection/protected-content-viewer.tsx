@@ -27,6 +27,9 @@ type AccessResponse = {
   }
 }
 
+const PERSONAL_USE_NOTICE = "هذا المحتوى للاستخدام الشخصي فقط."
+const WATERMARK_NOTICE = "قد تظهر علامة مائية لحماية حقوق المحتوى."
+
 function formatNow() {
   return new Date().toLocaleString("ar-EG")
 }
@@ -57,12 +60,8 @@ export function ProtectedContentViewer({
   const [warning, setWarning] = useState("")
   const [productTitle, setProductTitle] = useState(title)
   const [openLabel, setOpenLabel] = useState("فتح الرابط")
-  const [noticePrimary, setNoticePrimary] = useState(
-    "هذا المحتوى مخصص لاستخدامك الشخصي فقط. يُمنع تصويره أو تسجيله أو مشاركته أو إعادة نشره بأي شكل.",
-  )
-  const [noticeSecondary, setNoticeSecondary] = useState(
-    "حفاظًا على حقوق الملكية، قد تظهر علامة مائية مرتبطة بحسابك أثناء عرض المحتوى.",
-  )
+  const [noticePrimary] = useState(PERSONAL_USE_NOTICE)
+  const [noticeSecondary] = useState(WATERMARK_NOTICE)
   const [trace, setTrace] = useState<{ userId: string; email: string; generatedAt: string } | null>(null)
   const [watermarkNow, setWatermarkNow] = useState(formatNow())
 
@@ -94,15 +93,13 @@ export function ProtectedContentViewer({
       setExpiresAt(result.expiresAt || "")
       setProductTitle(result.productTitle || title)
       setOpenLabel(result.openLabel || "فتح الرابط")
-      setNoticePrimary(result.legalNoticePrimary || noticePrimary)
-      setNoticeSecondary(result.legalNoticeSecondary || noticeSecondary)
       setTrace(result.trace || null)
     } catch (accessError) {
       setError(accessError instanceof Error ? accessError.message : "تعذر تحميل المحتوى المحمي الآن.")
     } finally {
       setLoading(false)
     }
-  }, [currentUser, noticePrimary, noticeSecondary, productId, productType, title])
+  }, [currentUser, productId, productType, title])
 
   useEffect(() => {
     const auth = getFirebaseClientAuth()

@@ -18,7 +18,7 @@ const trustItems = [
   },
   {
     icon: Sparkles,
-    title: "تجربة Premium",
+    title: "تجربة راقية",
     text: "واجهة عربية راقية، بسيطة، ومريحة بصريًا على كل الأجهزة.",
   },
 ]
@@ -36,10 +36,7 @@ export function TrustSection() {
 
         <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {trustItems.map((item) => (
-            <article
-              key={item.title}
-              className="rounded-[2rem] border border-border bg-card p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
-            >
+            <article key={item.title} className="hover-lift rounded-[2rem] border border-border bg-card p-6 shadow-sm">
               <div className="inline-flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                 <item.icon className="size-6" />
               </div>

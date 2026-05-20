@@ -26,10 +26,7 @@ export async function BooksPreview() {
 
         <div className="mt-12 grid gap-6 lg:grid-cols-4">
           {books.map((book) => (
-            <article
-              key={book.id}
-              className="rounded-[2rem] border border-border bg-card p-6 shadow-sm transition hover:-translate-y-2 hover:shadow-xl"
-            >
+            <article key={book.id} className="hover-lift luxury-panel p-6">
               <div className="inline-flex size-12 items-center justify-center rounded-2xl bg-primary/10 text-primary">
                 <BookOpen className="size-6" />
               </div>
@@ -37,7 +34,7 @@ export async function BooksPreview() {
               <p className="mt-3 text-sm font-semibold text-accent">{book.shortDescription}</p>
               <p className="mt-4 text-sm leading-7 text-muted-foreground">{book.description}</p>
               <div className="mt-6 flex items-center justify-between">
-                <p className="latin text-lg font-black text-primary">{book.price.toLocaleString("en-US")} EGP</p>
+                <p className="latin text-lg font-black text-primary">{book.price.toLocaleString("ar-EG")} ج.م</p>
                 <Link href={`/books/${book.slug || book.id}`} className="text-sm font-bold text-primary hover:text-accent">
                   التفاصيل
                 </Link>

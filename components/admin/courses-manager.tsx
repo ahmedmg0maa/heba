@@ -68,6 +68,12 @@ function toSlug(value: string) {
     .replace(/-+/g, "-")
 }
 
+function statusLabel(status: "active" | "draft" | "hidden") {
+  if (status === "active") return "نشط"
+  if (status === "draft") return "مسودة"
+  return "مخفي"
+}
+
 export function CoursesManager() {
   const [items, setItems] = useState<CourseRecord[]>([])
   const [loading, setLoading] = useState(true)
@@ -229,7 +235,7 @@ export function CoursesManager() {
     <div className="space-y-6" dir="rtl">
       <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
         <h1 className="text-3xl font-black text-foreground">إدارة الكورسات</h1>
-        <p className="mt-2 text-muted-foreground">إضافة وتعديل وحذف الكورسات وروابط المحتوى عبر Google Drive أو أي منصة خارجية.</p>
+        <p className="mt-2 text-muted-foreground">إضافة وتعديل وحذف الكورسات وروابط المحتوى عبر جوجل درايف أو أي منصة خارجية.</p>
       </section>
 
       <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
@@ -337,7 +343,7 @@ export function CoursesManager() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="course-access">رابط محتوى الكورس من Google Drive أو منصة خارجية</Label>
+            <Label htmlFor="course-access">رابط محتوى الكورس من جوجل درايف أو منصة خارجية</Label>
             <Input
               id="course-access"
               value={form.accessUrl}
@@ -347,7 +353,7 @@ export function CoursesManager() {
             />
             <p className="text-xs leading-6 text-muted-foreground break-words">رابط دخول الكورس يظهر للمستخدم بعد تأكيد الدفع.</p>
             <p className="rounded-xl border border-border bg-secondary/25 p-3 text-xs leading-6 text-muted-foreground break-words">
-              ارفعي الملف على Google Drive، ثم اجعلي المشاركة: أي شخص لديه الرابط يمكنه العرض، وبعدها ضعي الرابط هنا.
+              ارفعي الملف على جوجل درايف، ثم اجعلي المشاركة: أي شخص لديه الرابط يمكنه العرض، وبعدها ضعي الرابط هنا.
             </p>
           </div>
 
@@ -357,13 +363,13 @@ export function CoursesManager() {
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">active</SelectItem>
-                <SelectItem value="draft">draft</SelectItem>
-                <SelectItem value="hidden">hidden</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+                <SelectContent>
+                  <SelectItem value="active">نشط</SelectItem>
+                  <SelectItem value="draft">مسودة</SelectItem>
+                  <SelectItem value="hidden">مخفي</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
           <div className="flex flex-wrap gap-3">
             <Button type="submit" disabled={saving} className="rounded-full">
@@ -398,8 +404,11 @@ export function CoursesManager() {
                 <div className="min-w-0">
                   <p className="font-bold text-foreground">{item.title}</p>
                   <p className="text-xs text-muted-foreground break-words">
-                    {item.slug} · {toNumber(item.price).toLocaleString("ar-EG")} EGP · {item.status}
+                    {item.slug} · {toNumber(item.price).toLocaleString("ar-EG")} ج.م · {statusLabel(item.status)}
                   </p>
+                  {item.accessUrl ? (
+                    <p className="mt-1 max-w-full break-all text-[11px] leading-5 text-muted-foreground">{item.accessUrl}</p>
+                  ) : null}
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" size="sm" className="rounded-full" onClick={() => startEdit(item)}>
@@ -409,7 +418,7 @@ export function CoursesManager() {
                     تفعيل
                   </Button>
                   <Button type="button" size="sm" variant="outline" className="rounded-full bg-transparent" onClick={() => changeStatus(item.id, "draft")}>
-                    Draft
+                    مسودة
                   </Button>
                   <Button type="button" size="sm" variant="outline" className="rounded-full bg-transparent" onClick={() => changeStatus(item.id, "hidden")}>
                     إخفاء

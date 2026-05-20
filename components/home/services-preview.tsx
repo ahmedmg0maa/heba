@@ -21,7 +21,7 @@ export function ServicesPreview() {
           {services.map((service) => (
             <article
               key={service.id}
-              className={`group relative overflow-hidden rounded-[2rem] border p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-xl ${
+              className={`hover-lift group relative overflow-hidden rounded-[2rem] border p-6 shadow-sm ${
                 service.featured
                   ? "border-primary/40 bg-[color:rgba(47,97,115,0.08)] text-foreground"
                   : "border-border bg-card"

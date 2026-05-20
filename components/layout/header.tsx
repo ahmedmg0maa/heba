@@ -26,10 +26,10 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-border/65 bg-background/90 backdrop-blur-md" dir="rtl">
       <div className="container-brand">
-        <nav className="grid h-16 grid-cols-[auto_1fr_auto] items-center gap-3 lg:h-[4.25rem]">
+        <nav className="grid h-16 grid-cols-[auto_1fr_auto] items-center gap-3 lg:h-[4.5rem]">
           <button
             type="button"
-            className="inline-flex size-10 items-center justify-center rounded-full border border-border bg-card/85 text-foreground lg:hidden"
+            className="inline-flex size-11 items-center justify-center rounded-full border border-border bg-card/85 text-foreground lg:hidden"
             onClick={() => setIsOpen((value) => !value)}
             aria-label={isOpen ? "إغلاق القائمة" : "فتح القائمة"}
           >
@@ -63,19 +63,14 @@ export function Header() {
           <div className="flex items-center gap-2 justify-self-end">
             <div className="hidden items-center gap-2 sm:flex">
               <ThemeToggle />
-              <Link href="/en">
-                <Button variant="outline" size="sm" className="rounded-full bg-card/85 px-3">
-                  EN
-                </Button>
-              </Link>
               <Link href="/account" aria-label="حسابي">
-                <Button variant="outline" size="icon" className="rounded-full bg-card/85">
+                <Button variant="outline" size="icon" className="size-10 rounded-full bg-card/85">
                   <UserRound className="size-4" />
                 </Button>
               </Link>
             </div>
             <Link href="/booking" className="hidden sm:inline-flex">
-              <Button className="rounded-full bg-[var(--burgundy)] px-5 text-primary-foreground shadow-lg hover:bg-[var(--burgundy)]/90">
+              <Button className="h-11 rounded-full bg-[var(--burgundy)] px-6 text-primary-foreground shadow-lg hover:bg-[var(--burgundy)]/90">
                 احجزي جلستك
               </Button>
             </Link>
@@ -84,7 +79,7 @@ export function Header() {
       </div>
 
       {isOpen ? (
-        <div className="border-t border-border/65 bg-background/95 px-4 py-4 lg:hidden">
+        <div className="animate-in fade-in-0 slide-in-from-top-1 border-t border-border/65 bg-background/95 px-4 py-4 duration-200 lg:hidden">
           <div className="container-brand px-0">
             <div className="grid gap-2 rounded-[1.3rem] border border-border bg-card/85 p-3 shadow-sm">
               {navItems.map((item) => {
@@ -105,20 +100,15 @@ export function Header() {
                 )
               })}
 
-              <div className="mt-1 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div className="mt-1 grid grid-cols-3 gap-2">
                 <ThemeToggle />
-                <Link href="/en">
-                  <Button variant="outline" className="w-full rounded-full bg-transparent">
-                    EN
-                  </Button>
-                </Link>
                 <Link href="/account">
-                  <Button variant="outline" className="w-full rounded-full bg-transparent">
+                  <Button variant="outline" className="h-11 w-full rounded-full bg-transparent">
                     حسابي
                   </Button>
                 </Link>
                 <Link href="/booking">
-                  <Button className="w-full rounded-full bg-[var(--burgundy)] text-primary-foreground hover:bg-[var(--burgundy)]/90">
+                  <Button className="h-11 w-full rounded-full bg-[var(--burgundy)] text-primary-foreground hover:bg-[var(--burgundy)]/90">
                     احجزي الآن
                   </Button>
                 </Link>

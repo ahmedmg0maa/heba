@@ -26,10 +26,7 @@ export async function CoursesPreview() {
 
         <div className="mt-12 grid gap-6 lg:grid-cols-3">
           {courses.map((course) => (
-            <article
-              key={course.id}
-              className="overflow-hidden rounded-[2rem] border border-border bg-card shadow-sm transition hover:-translate-y-1 hover:shadow-xl"
-            >
+            <article key={course.id} className="hover-lift overflow-hidden rounded-[2rem] border border-border bg-card shadow-sm">
               <div className="h-48 bg-primary p-6 text-primary-foreground">
                 <span className="rounded-full bg-white/20 px-3 py-1 text-xs font-bold">{course.duration || "برنامج رقمي"}</span>
                 <h3 className="mt-10 text-3xl font-black leading-tight">{course.title}</h3>
@@ -50,7 +47,7 @@ export async function CoursesPreview() {
                 <div className="mt-6 flex items-center justify-between gap-3">
                   <div>
                     <p className="text-xs text-muted-foreground">السعر</p>
-                    <p className="text-2xl font-black text-primary latin">{course.price.toLocaleString("en-US")} EGP</p>
+                    <p className="text-2xl font-black text-primary latin">{course.price.toLocaleString("ar-EG")} ج.م</p>
                   </div>
                   <Link href={`/courses/${course.slug || course.id}`}>
                     <Button className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90">التفاصيل</Button>

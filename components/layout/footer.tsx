@@ -4,9 +4,9 @@ import { Facebook, Instagram, Mail, MapPin, Phone, Youtube } from "lucide-react"
 import { brand, navItems, services } from "@/data/site"
 
 const socialLinks = [
-  { name: "Instagram", href: "https://instagram.com", icon: Instagram },
-  { name: "Facebook", href: "https://facebook.com", icon: Facebook },
-  { name: "YouTube", href: "https://youtube.com", icon: Youtube },
+  { name: "إنستغرام", href: "https://instagram.com", icon: Instagram },
+  { name: "فيسبوك", href: "https://facebook.com", icon: Facebook },
+  { name: "يوتيوب", href: "https://youtube.com", icon: Youtube },
 ]
 
 export function Footer() {
