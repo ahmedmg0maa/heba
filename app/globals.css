@@ -124,7 +124,7 @@
 }
 
 @theme inline {
-  --font-sans: "Noto Sans Arabic", "Segoe UI", Tahoma, system-ui, sans-serif;
+  --font-sans: "Cairo", "Tajawal", "IBM Plex Sans Arabic", "Noto Sans Arabic", "Segoe UI", Tahoma, system-ui, sans-serif;
   --font-serif: "Amiri", "Times New Roman", Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --color-background: var(--background);
@@ -178,7 +178,8 @@
     @apply bg-background text-foreground antialiased;
     min-height: 100vh;
     overflow-x: hidden;
-    line-height: 1.6;
+    line-height: 1.82;
+    text-wrap: pretty;
     background-color: var(--background);
     background-image:
       radial-gradient(circle at 88% 12%, color-mix(in oklab, var(--teal) 10%, transparent) 0, transparent 30rem),
@@ -223,6 +224,11 @@
     max-width: 100%;
   }
 
+  p,
+  li {
+    overflow-wrap: anywhere;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *,
     *::before,
@@ -241,7 +247,7 @@
   }
 
   .section-padding {
-    @apply py-20 sm:py-24 lg:py-28;
+    @apply py-16 sm:py-20 lg:py-28;
     content-visibility: auto;
     contain-intrinsic-size: auto 760px;
   }
@@ -261,7 +267,7 @@
   }
 
   .brand-title {
-    @apply text-3xl font-bold leading-tight text-foreground sm:text-4xl lg:text-6xl;
+    @apply text-3xl font-black leading-[1.25] text-foreground sm:text-4xl lg:text-6xl;
   }
 
   .brand-text {
@@ -381,6 +387,24 @@
   .dark .brand-soft-surface {
     background: rgba(245, 240, 231, 0.075);
     border-color: rgba(245, 240, 231, 0.14);
+  }
+
+  .luxury-panel {
+    @apply rounded-[2rem] border border-border bg-card/90 shadow-[0_14px_42px_rgba(23,50,60,0.1)] backdrop-blur-md;
+  }
+
+  .touch-target {
+    min-height: 44px;
+  }
+
+  .hover-lift {
+    @apply transition-transform duration-300;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .hover-lift:hover {
+      transform: translateY(-4px);
+    }
   }
 }
 

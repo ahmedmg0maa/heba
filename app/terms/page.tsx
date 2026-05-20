@@ -45,7 +45,7 @@ export default function TermsPage() {
       <main dir="rtl">
         <section className="pt-20 section-padding soft-gradient sm:pt-24">
           <div className="container-brand max-w-4xl text-center">
-            <p className="eyebrow">Terms & Conditions</p>
+            <p className="eyebrow">الشروط والأحكام</p>
             <h1 className="mt-5 text-5xl font-black leading-tight text-foreground sm:text-6xl">الشروط والأحكام</h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-9 text-muted-foreground">
               قواعد الاستخدام والحجز والشراء لضمان تجربة واضحة وآمنة لكل عميلة.

@@ -65,7 +65,7 @@ export default async function BooksPage() {
                       <p className="font-bold text-foreground">{book.shortDescription}</p>
                       <p className="mt-3 leading-7 text-muted-foreground">{book.description}</p>
                       <div className="mt-6 flex items-center justify-between gap-3">
-                        <p className="text-2xl font-black text-primary latin">{book.price.toLocaleString("en-US")} EGP</p>
+                        <p className="text-2xl font-black text-primary latin">{book.price.toLocaleString("ar-EG")} ج.م</p>
                         <Link href={`/books/${book.slug || book.id}`}>
                           <Button className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90">
                             <ShoppingBag className="h-4 w-4" />

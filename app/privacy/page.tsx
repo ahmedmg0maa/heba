@@ -26,7 +26,7 @@ const sections = [
   },
   {
     title: "المعالجة والدفع",
-    text: "في حالة تفعيل بوابات دفع خارجية (مثل Paymob) تتم معالجة بيانات الدفع عبر مزود الدفع مباشرة. لا يتم حفظ بيانات البطاقات البنكية داخل المنصة.",
+    text: "في حالة تفعيل بوابات دفع خارجية (مثل باي موب) تتم معالجة بيانات الدفع عبر مزود الدفع مباشرة. لا يتم حفظ بيانات البطاقات البنكية داخل المنصة.",
   },
   {
     title: "مشاركة البيانات",
@@ -45,7 +45,7 @@ export default function PrivacyPage() {
       <main dir="rtl">
         <section className="pt-20 section-padding soft-gradient sm:pt-24">
           <div className="container-brand max-w-4xl text-center">
-            <p className="eyebrow">Privacy Policy</p>
+            <p className="eyebrow">سياسة الخصوصية</p>
             <h1 className="mt-5 text-5xl font-black leading-tight text-foreground sm:text-6xl">سياسة الخصوصية</h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-9 text-muted-foreground">
               هذه السياسة توضح كيفية جمع واستخدام وحماية بيانات الزوار والعملاء.

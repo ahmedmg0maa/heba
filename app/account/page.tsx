@@ -621,7 +621,7 @@ export default function AccountPage() {
                     <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
                     <p className="font-bold text-foreground">{item.productTitle}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {orderStatusLabel(item.status)} · {toNumber(item.amount).toLocaleString("ar-EG")} EGP
+                      {orderStatusLabel(item.status)} · {toNumber(item.amount).toLocaleString("ar-EG")} ج.م
                     </p>
                     <div className="mt-3 rounded-xl border border-border/80 bg-card px-3 py-2">
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
@@ -667,7 +667,7 @@ export default function AccountPage() {
                   <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
                     <p className="font-bold text-foreground">{item.productTitle}</p>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {orderStatusLabel(item.status)} · {toNumber(item.amount).toLocaleString("ar-EG")} EGP
+                      {orderStatusLabel(item.status)} · {toNumber(item.amount).toLocaleString("ar-EG")} ج.م
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       <Link href={`/books/${item.productId}`} className="inline-flex text-sm font-bold text-primary">
@@ -705,7 +705,7 @@ export default function AccountPage() {
               {bookings.map((item) => (
                 <article key={item.id} className="rounded-2xl border border-border bg-background p-4">
                   <p className="font-bold text-foreground">
-                    جلسة {toNumber(item.duration)} دقيقة · {toNumber(item.amount).toLocaleString("ar-EG")} EGP
+                    جلسة {toNumber(item.duration)} دقيقة · {toNumber(item.amount).toLocaleString("ar-EG")} ج.م
                   </p>
                   <p className="mt-2 text-xs">
                     <span className="rounded-full bg-primary/10 px-2 py-1 font-bold text-primary">{bookingStatusLabel(item.status)}</span>
@@ -749,7 +749,7 @@ export default function AccountPage() {
                     <span className="rounded-full bg-muted px-2 py-1 font-bold text-foreground">{orderTypeLabel(item.productType)}</span>
                     <span className="mr-2 rounded-full bg-primary/10 px-2 py-1 font-bold text-primary">{orderStatusLabel(item.status)}</span>
                   </p>
-                  <p className="mt-1 text-xs text-muted-foreground latin">{toNumber(item.amount).toLocaleString("ar-EG")} EGP</p>
+                  <p className="mt-1 text-xs text-muted-foreground latin">{toNumber(item.amount).toLocaleString("ar-EG")} ج.م</p>
                 </article>
               ))}
             </div>

@@ -55,7 +55,36 @@ export default async function AdminAccessLogsPage() {
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-[2rem] border border-border bg-card shadow-sm">
+      <div className="grid gap-3 lg:hidden">
+        {logs.length === 0 ? (
+          <div className="rounded-2xl border border-border bg-card p-6 text-center text-muted-foreground">لا توجد سجلات بعد.</div>
+        ) : (
+          logs.map((item) => (
+            <article key={String(item.id)} className="rounded-2xl border border-border bg-card p-4">
+              <p className="text-xs text-muted-foreground">{formatDateTime(item.timestamp || item.createdAt)}</p>
+              <p className="mt-2 break-all text-sm font-bold text-foreground">{String(item.email || "-")}</p>
+              <p className="break-all text-xs text-muted-foreground">{String(item.userId || "-")}</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                {String(item.productType || "-")} · {String(item.productId || "-")}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">الإجراء: {String(item.action || "-")}</p>
+              <p className="text-xs text-muted-foreground">IP: {String(item.ip || "-")}</p>
+              <p className="mt-1 break-all text-xs text-muted-foreground">المتصفح: {String(item.userAgent || "-")}</p>
+              <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                <span className={`rounded-full px-3 py-1 font-bold ${item.allowed ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}>
+                  {item.allowed ? "مسموح" : "مرفوض"}
+                </span>
+                <span className="rounded-full bg-muted px-3 py-1 font-bold text-muted-foreground">
+                  {item.suspicious ? "مشبوه" : "سليم"}
+                </span>
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">السبب: {String(item.reason || "-")}</p>
+            </article>
+          ))
+        )}
+      </div>
+
+      <div className="hidden overflow-x-auto rounded-[2rem] border border-border bg-card shadow-sm lg:block">
         <table className="w-full min-w-[1280px] text-right">
           <thead className="bg-muted/70 text-sm">
             <tr>
@@ -83,11 +112,11 @@ export default async function AdminAccessLogsPage() {
                   <td className="px-4 py-3 text-muted-foreground">{formatDateTime(item.timestamp || item.createdAt)}</td>
                   <td className="px-4 py-3 text-muted-foreground">
                     <p className="font-bold text-foreground">{String(item.email || "-")}</p>
-                    <p className="text-xs">{String(item.userId || "-")}</p>
+                    <p className="max-w-[220px] break-all text-xs">{String(item.userId || "-")}</p>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">
                     <p>{String(item.productType || "-")}</p>
-                    <p className="text-xs">{String(item.productId || "-")}</p>
+                    <p className="max-w-[220px] break-all text-xs">{String(item.productId || "-")}</p>
                   </td>
                   <td className="px-4 py-3 text-muted-foreground">{String(item.action || "-")}</td>
                   <td className="px-4 py-3 text-muted-foreground">{String(item.ip || "-")}</td>

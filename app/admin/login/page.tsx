@@ -31,6 +31,7 @@ export default function AdminLoginPage() {
         if (result.authenticated) {
           setError("")
           router.replace("/admin")
+          router.refresh()
         }
       } catch {
         // keep login form visible on network errors

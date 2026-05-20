@@ -202,7 +202,7 @@ export default function CheckoutPage() {
                 </div>
                 <div className="flex items-center justify-between rounded-2xl border border-accent/30 bg-accent/10 p-4">
                   <span className="font-bold text-foreground">الإجمالي</span>
-                  <strong className="text-3xl text-primary">{selectedProduct?.price?.toLocaleString("ar-EG") || "0"} EGP</strong>
+                  <strong className="text-3xl text-primary">{selectedProduct?.price?.toLocaleString("ar-EG") || "0"} ج.م</strong>
                 </div>
               </div>
 
@@ -273,7 +273,7 @@ export default function CheckoutPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="manual">تحويل أو تأكيد يدوي</SelectItem>
-                        <SelectItem value="paymob">Paymob</SelectItem>
+                        <SelectItem value="paymob">باي موب</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

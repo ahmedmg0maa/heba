@@ -2,8 +2,8 @@ import type { Metadata } from "next"
 import { Header } from "@/components/layout/header"
 import { Footer } from "@/components/layout/footer"
 import { HeroSection } from "@/components/home/hero-section"
+import { MissionSection } from "@/components/home/mission-section"
 import { TrustSection } from "@/components/home/trust-section"
-import { StartHereSection } from "@/components/home/start-here-section"
 import { ServicesPreview } from "@/components/home/services-preview"
 import { CoursesPreview } from "@/components/home/courses-preview"
 import { BooksPreview } from "@/components/home/books-preview"
@@ -34,11 +34,11 @@ export default function HomePage() {
       <Header />
       <main>
         <HeroSection />
-        <TrustSection />
-        <StartHereSection />
-        <ServicesPreview />
-        <CoursesPreview />
+        <MissionSection />
         <BooksPreview />
+        <CoursesPreview />
+        <ServicesPreview />
+        <TrustSection />
         <TestimonialsSection />
         <FinalCtaSection />
       </main>

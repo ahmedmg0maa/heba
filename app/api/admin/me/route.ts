@@ -1,6 +1,6 @@
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import { ADMIN_COOKIE_NAME, verifyAdminSession } from "@/lib/admin-session"
+import { ADMIN_COOKIE_NAME, requireAdmin } from "@/lib/admin-session"
 
 export const runtime = "nodejs"
 
@@ -11,7 +11,7 @@ function debugMeLog(payload: { cookieExists: boolean; verified: boolean; reason:
 
 export async function GET() {
   const token = (await cookies()).get(ADMIN_COOKIE_NAME)?.value
-  const verification = await verifyAdminSession(token)
+  const verification = await requireAdmin()
   debugMeLog({
     cookieExists: Boolean(token),
     verified: verification.ok,

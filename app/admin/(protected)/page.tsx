@@ -54,7 +54,7 @@ export default async function AdminDashboardPage() {
     { name: "حجوزات قيد المراجعة", value: pendingBookings.length, note: "تحتاج متابعة", icon: Calendar },
     { name: "طلبات قيد المراجعة", value: pendingOrders.length, note: "بانتظار تأكيد الدفع", icon: ShoppingCart },
     { name: "طلبات مدفوعة", value: paidOrders.length, note: "تم تفعيلها", icon: ShoppingCart },
-    { name: "إيراد تقديري", value: `${revenue.toLocaleString("ar-EG")} EGP`, note: "من الطلبات المدفوعة", icon: TrendingUp },
+    { name: "إيراد تقديري", value: `${revenue.toLocaleString("ar-EG")} ج.م`, note: "من الطلبات المدفوعة", icon: TrendingUp },
     { name: "حجوزات اليوم", value: todayBookings.length, note: "حسب توقيت القاهرة", icon: Calendar },
     { name: "الرسائل", value: messages.length, note: "رسائل العملاء", icon: MessageSquare },
   ]

@@ -73,7 +73,7 @@ export default async function CoursesPage() {
                         </span>
                       </div>
                       <div className="mt-6 flex items-center justify-between gap-3">
-                        <p className="text-2xl font-black text-primary latin">{course.price.toLocaleString("en-US")} EGP</p>
+                        <p className="text-2xl font-black text-primary latin">{course.price.toLocaleString("ar-EG")} ج.م</p>
                         <Link href={`/courses/${course.slug || course.id}`}>
                           <Button className="rounded-full">التفاصيل</Button>
                         </Link>

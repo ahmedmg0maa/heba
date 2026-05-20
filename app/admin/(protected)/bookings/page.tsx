@@ -172,7 +172,7 @@ export default async function AdminBookingsPage({ searchParams }: PageProps) {
                 <p className="mt-3 text-sm text-muted-foreground">اليوم: {formatBookingDate(slot)}</p>
                 <p className="text-sm text-muted-foreground">الوقت: {formatBookingTime(slot)}</p>
                 <p className="text-sm text-muted-foreground">المدة: {String(booking.duration || "-")} دقيقة</p>
-                <p className="text-sm text-muted-foreground">المبلغ: {amount.toLocaleString("ar-EG")} EGP</p>
+                <p className="text-sm text-muted-foreground">المبلغ: {amount.toLocaleString("ar-EG")} ج.م</p>
                 <p className="text-sm text-muted-foreground">الحالة: {mapStatus(statusValue)}</p>
                 <div className="mt-3">
                   <BookingStatusSelect bookingId={String(booking.id)} initialStatus={statusValue} />
@@ -220,7 +220,7 @@ export default async function AdminBookingsPage({ searchParams }: PageProps) {
                     <td className="px-4 py-3 text-muted-foreground">{formatBookingDate(slot)}</td>
                     <td className="px-4 py-3 text-muted-foreground">{formatBookingTime(slot)}</td>
                     <td className="px-4 py-3 text-muted-foreground">{String(booking.duration || "-")} دقيقة</td>
-                    <td className="px-4 py-3 text-muted-foreground">{amount.toLocaleString("ar-EG")} EGP</td>
+                    <td className="px-4 py-3 text-muted-foreground">{amount.toLocaleString("ar-EG")} ج.م</td>
                     <td className="px-4 py-3">
                       <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">{mapStatus(statusValue)}</span>
                     </td>

@@ -65,14 +65,14 @@ const schema = {
   "@context": "https://schema.org",
   "@type": "Person",
   name: "هبة الشريف",
-  jobTitle: "Life Coach",
-  description: "لايف كوتش وكاتبة متخصصة في الوعي بالذات.",
+  jobTitle: "مدربة وعي وتوجيه فردي",
+  description: "مدربة وكاتبة متخصصة في الوعي بالذات.",
   url: siteUrl,
   image: `${siteUrl}/images/heba-banner.jpeg`,
   sameAs: [],
   worksFor: {
     "@type": "Organization",
-    name: "Heba El Sharif",
+    name: "هبة الشريف",
     url: siteUrl,
   },
 }
@@ -84,7 +84,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" suppressHydrationWarning>
-      <body>
+      <body className="font-sans text-[15px] sm:text-base">
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false} disableTransitionOnChange>
           <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(schema) }} />
           {children}

@@ -289,6 +289,14 @@ export default function BookingPage() {
                 </div>
               ) : (
                 <form className="grid gap-5" onSubmit={handleSubmit}>
+                  <div className="grid gap-2 rounded-2xl border border-border bg-secondary/30 p-3 text-sm sm:grid-cols-3">
+                    {["١) بياناتك", "٢) الموعد", "٣) تأكيد الحجز"].map((step) => (
+                      <p key={step} className="rounded-xl bg-background px-3 py-2 text-center font-bold text-foreground">
+                        {step}
+                      </p>
+                    ))}
+                  </div>
+
                   <div className="grid gap-5 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="name">الاسم الكامل</Label>
@@ -390,7 +398,7 @@ export default function BookingPage() {
                         <span className="font-bold">{price.finalPrice.toLocaleString("en-US")} ج.م</span>
                       </div>
                     ) : null}
-                    <p className="mt-3 text-3xl font-black text-primary latin">{price.finalPrice.toLocaleString("en-US")} EGP</p>
+                    <p className="mt-3 text-3xl font-black text-primary latin">{price.finalPrice.toLocaleString("ar-EG")} ج.م</p>
                   </div>
 
                   <div className="space-y-2">

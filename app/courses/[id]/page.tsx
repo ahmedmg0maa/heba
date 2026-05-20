@@ -85,7 +85,7 @@ export default async function CourseDetailsPage({ params }: PageProps) {
                 <p className="mt-10 text-3xl font-black">{course.title}</p>
               </div>
               <div className="mt-6">
-                <p className="text-4xl font-black text-primary latin">{course.price.toLocaleString("en-US")} EGP</p>
+                <p className="text-4xl font-black text-primary latin">{course.price.toLocaleString("ar-EG")} ج.م</p>
               </div>
               <Link href={`/checkout?type=course&id=${course.id}`} className="mt-6 block">
                 <Button className="h-12 w-full rounded-full bg-[var(--burgundy)] text-primary-foreground hover:bg-[var(--burgundy)]/90">

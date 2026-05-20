@@ -71,7 +71,7 @@ export default async function BookDetailsPage({ params }: PageProps) {
               </div>
               <div className="mt-6">
                 <p className="text-sm text-muted-foreground">السعر</p>
-                <p className="text-4xl font-black text-primary latin">{book.price.toLocaleString("en-US")} EGP</p>
+                <p className="text-4xl font-black text-primary latin">{book.price.toLocaleString("ar-EG")} ج.م</p>
               </div>
               <Link href={`/checkout?type=book&id=${book.id}`} className="mt-6 block">
                 <Button className="h-12 w-full rounded-full bg-[var(--burgundy)] text-primary-foreground hover:bg-[var(--burgundy)]/90">

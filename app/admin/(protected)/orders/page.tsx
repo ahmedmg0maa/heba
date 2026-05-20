@@ -66,7 +66,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
             href="/api/admin/export/orders"
             className="inline-flex rounded-full border border-border px-4 py-2 text-sm font-bold text-foreground hover:border-primary hover:text-primary"
           >
-            تصدير الطلبات CSV
+            تصدير ملف CSV
           </a>
         </div>
       </div>
@@ -104,7 +104,36 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
         </form>
       </section>
 
-      <div className="overflow-x-auto rounded-[2rem] border border-border bg-card shadow-sm">
+      <div className="grid gap-3 lg:hidden">
+        {filtered.length === 0 ? (
+          <div className="rounded-2xl border border-border bg-card p-6 text-center text-muted-foreground">لا توجد طلبات مطابقة للفلاتر.</div>
+        ) : (
+          filtered.map((order) => {
+            const statusValue = String(order.status || "pending").toLowerCase()
+            const amount = Number(order.amount || 0)
+            return (
+              <article key={String(order.id)} className="rounded-2xl border border-border bg-card p-4">
+                <p className="text-sm text-muted-foreground">رقم الطلب</p>
+                <p className="break-words font-black text-foreground">{String(order.orderNumber || order.id || "-")}</p>
+                <p className="mt-3 font-bold text-foreground">{String(order.productTitle || "-")}</p>
+                <p className="text-xs text-muted-foreground">{String(order.productType || "-")}</p>
+                <p className="mt-1 break-all text-xs text-muted-foreground">معرّف المنتج: {String(order.productId || order.itemId || "-")}</p>
+                <p className="mt-3 text-sm text-muted-foreground">{String(order.customerName || "-")}</p>
+                <p className="break-all text-xs text-muted-foreground">{String(order.email || "-")}</p>
+                <p className="text-xs text-muted-foreground">{String(order.phone || "-")}</p>
+                <p className="mt-3 text-sm font-bold text-primary">{amount.toLocaleString("ar-EG")} ج.م</p>
+                <p className="mt-1 text-xs text-muted-foreground">الحالة: {mapStatus(statusValue)}</p>
+                <p className="text-xs text-muted-foreground">الإنشاء: {formatDateTime(order.createdAt)}</p>
+                <div className="mt-3">
+                  <OrderStatusSelect orderId={String(order.id)} initialStatus={statusValue} />
+                </div>
+              </article>
+            )
+          })
+        )}
+      </div>
+
+      <div className="hidden overflow-x-auto rounded-[2rem] border border-border bg-card shadow-sm lg:block">
         <table className="w-full min-w-[1050px] text-right">
           <thead className="bg-muted/70 text-sm">
             <tr>
@@ -121,7 +150,7 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
             {filtered.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-4 py-8 text-center text-muted-foreground">
-                  لا توجد طلبات مطابقة للفلتر.
+                  لا توجد طلبات مطابقة للفلاتر.
                 </td>
               </tr>
             ) : (
@@ -135,14 +164,14 @@ export default async function AdminOrdersPage({ searchParams }: PageProps) {
                     <td className="px-4 py-3 text-muted-foreground">
                       <p>{String(order.productTitle || "-")}</p>
                       <p className="text-xs">{String(order.productType || "-")}</p>
-                      <p className="text-xs">ID: {String(order.productId || order.itemId || "-")}</p>
+                      <p className="max-w-[220px] break-all text-xs">معرّف: {String(order.productId || order.itemId || "-")}</p>
                     </td>
                     <td className="px-4 py-3 text-muted-foreground">
                       <p>{customerName}</p>
-                      <p className="text-xs">{String(order.email || "-")}</p>
+                      <p className="max-w-[220px] break-all text-xs">{String(order.email || "-")}</p>
                       <p className="text-xs">{String(order.phone || "-")}</p>
                     </td>
-                    <td className="px-4 py-3 text-muted-foreground latin">{amount.toLocaleString("en-US")} EGP</td>
+                    <td className="px-4 py-3 text-muted-foreground latin">{amount.toLocaleString("ar-EG")} ج.م</td>
                     <td className="px-4 py-3">
                       <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-bold text-primary">{mapStatus(statusValue)}</span>
                     </td>

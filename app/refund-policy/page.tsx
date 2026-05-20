@@ -41,7 +41,7 @@ export default function RefundPolicyPage() {
       <main dir="rtl">
         <section className="pt-20 section-padding soft-gradient sm:pt-24">
           <div className="container-brand max-w-4xl text-center">
-            <p className="eyebrow">Refund Policy</p>
+            <p className="eyebrow">سياسة الاسترجاع</p>
             <h1 className="mt-5 text-5xl font-black leading-tight text-foreground sm:text-6xl">سياسة الاسترجاع</h1>
             <p className="mx-auto mt-6 max-w-2xl text-lg leading-9 text-muted-foreground">
               نلتزم بالوضوح والإنصاف في معالجة طلبات الاسترجاع بما يراعي طبيعة المحتوى الرقمي والخدمات الفردية.

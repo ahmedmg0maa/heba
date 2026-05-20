@@ -62,7 +62,7 @@ export default async function CheckoutSuccessPage({ searchParams }: PageProps) {
                   </div>
                   <div className="rounded-2xl bg-muted p-4">
                     <p className="text-xs text-muted-foreground">الإجمالي</p>
-                    <p className="mt-1 font-bold text-foreground latin">{String(order?.amount || "-")} EGP</p>
+                    <p className="mt-1 font-bold text-foreground latin">{String(order?.amount || "-")} ج.م</p>
                   </div>
                 </div>
               </div>
