@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import { AlertCircle, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,7 +13,6 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
   const [setupMode, setSetupMode] = useState(false)
-  const router = useRouter()
   const searchParams = useSearchParams()
 
   useEffect(() => {
@@ -30,8 +29,8 @@ export default function AdminLoginPage() {
         if (!result.configured) setSetupMode(true)
         if (result.authenticated) {
           setError("")
-          router.replace("/admin")
-          router.refresh()
+          window.location.href = "/admin"
+          return
         }
       } catch {
         // keep login form visible on network errors
@@ -39,7 +38,7 @@ export default function AdminLoginPage() {
     }
 
     void checkSession()
-  }, [router, searchParams])
+  }, [searchParams])
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
@@ -63,8 +62,8 @@ export default function AdminLoginPage() {
         throw new Error(result.message || "تعذر تسجيل الدخول. تأكدي من كلمة المرور ثم حاولي مرة أخرى.")
       }
       setError("")
-      router.replace("/admin")
-      router.refresh()
+      window.location.href = "/admin"
+      return
     } catch (loginError) {
       setError(
         loginError instanceof Error ? loginError.message : "تعذر تسجيل الدخول. تأكدي من كلمة المرور ثم حاولي مرة أخرى.",
