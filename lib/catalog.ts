@@ -47,6 +47,39 @@ function asStatus(value: unknown): ProductStatus {
   return "active"
 }
 
+function normalizeForPlaceholderCheck(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, " ")
+}
+
+function isPlaceholderContent(product: {
+  id: string
+  slug: string
+  title: string
+  shortDescription: string
+  description: string
+}) {
+  const values = [
+    normalizeForPlaceholderCheck(product.id),
+    normalizeForPlaceholderCheck(product.slug),
+    normalizeForPlaceholderCheck(product.title),
+    normalizeForPlaceholderCheck(product.shortDescription),
+    normalizeForPlaceholderCheck(product.description),
+  ]
+
+  const exactPlaceholderTokens = new Set(["tt", "test", "testa", "test/testa", "testa/test"])
+  if (values.some((value) => exactPlaceholderTokens.has(value))) return true
+
+  const title = normalizeForPlaceholderCheck(product.title)
+  const shortDescription = normalizeForPlaceholderCheck(product.shortDescription)
+  const description = normalizeForPlaceholderCheck(product.description)
+
+  if (title === "tt" || title === "test" || title.startsWith("test ")) return true
+  if (shortDescription === "test" || shortDescription === "testa") return true
+  if (description === "test" || description === "testa") return true
+
+  return false
+}
+
 function mapCourseRecord(record: AdminRecord): CourseProduct | null {
   const id = asText(record.id)
   const slug = asText(record.slug) || id
@@ -98,7 +131,7 @@ export async function listCatalogCourses(options?: { onlyActive?: boolean }) {
     limit: 1000,
   })
   const courses = records.map(mapCourseRecord).filter(Boolean) as CourseProduct[]
-  if (options?.onlyActive) return courses.filter((item) => item.status === "active")
+  if (options?.onlyActive) return courses.filter((item) => item.status === "active" && !isPlaceholderContent(item))
   return courses
 }
 
@@ -109,7 +142,7 @@ export async function listCatalogBooks(options?: { onlyActive?: boolean }) {
     limit: 1000,
   })
   const books = records.map(mapBookRecord).filter(Boolean) as BookProduct[]
-  if (options?.onlyActive) return books.filter((item) => item.status === "active")
+  if (options?.onlyActive) return books.filter((item) => item.status === "active" && !isPlaceholderContent(item))
   return books
 }
 
@@ -138,9 +171,15 @@ async function getBookFromFirestore(slugOrId: string) {
 }
 
 export async function getCatalogCourseBySlug(slugOrId: string) {
-  return getCourseFromFirestore(slugOrId)
+  const course = await getCourseFromFirestore(slugOrId)
+  if (!course || course.status !== "active") return null
+  if (isPlaceholderContent(course)) return null
+  return course
 }
 
 export async function getCatalogBookBySlug(slugOrId: string) {
-  return getBookFromFirestore(slugOrId)
+  const book = await getBookFromFirestore(slugOrId)
+  if (!book || book.status !== "active") return null
+  if (isPlaceholderContent(book)) return null
+  return book
 }
