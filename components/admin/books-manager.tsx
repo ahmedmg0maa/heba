@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -69,6 +70,7 @@ function statusLabel(status: "active" | "draft" | "hidden") {
 }
 
 export function BooksManager() {
+  const router = useRouter()
   const [items, setItems] = useState<BookRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -77,13 +79,18 @@ export function BooksManager() {
 
   const isEditing = useMemo(() => Boolean(editingId), [editingId])
 
-  async function loadBooks() {
+  const loadBooks = useCallback(async () => {
     setLoading(true)
     try {
-      const response = await fetch("/api/admin/books", {
+      const response = await fetch("/api/admin/books?limit=200", {
         cache: "no-store",
         credentials: "include",
       })
+      if (response.status === 401) {
+        router.replace("/admin/login")
+        router.refresh()
+        return
+      }
       const data = await response.json()
       if (!response.ok || !data.ok) throw new Error(data.message || "تعذر تحميل الكتب.")
       setItems(Array.isArray(data.books) ? data.books : [])
@@ -97,11 +104,11 @@ export function BooksManager() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [router])
 
   useEffect(() => {
     void loadBooks()
-  }, [])
+  }, [loadBooks])
 
   async function submitForm(event: React.FormEvent) {
     event.preventDefault()

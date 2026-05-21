@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -75,6 +76,7 @@ function statusLabel(status: "active" | "draft" | "hidden") {
 }
 
 export function CoursesManager() {
+  const router = useRouter()
   const [items, setItems] = useState<CourseRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -83,13 +85,18 @@ export function CoursesManager() {
 
   const isEditing = useMemo(() => Boolean(editingId), [editingId])
 
-  async function loadCourses() {
+  const loadCourses = useCallback(async () => {
     setLoading(true)
     try {
-      const response = await fetch("/api/admin/courses", {
+      const response = await fetch("/api/admin/courses?limit=200", {
         cache: "no-store",
         credentials: "include",
       })
+      if (response.status === 401) {
+        router.replace("/admin/login")
+        router.refresh()
+        return
+      }
       const data = await response.json()
       if (!response.ok || !data.ok) throw new Error(data.message || "تعذر تحميل الكورسات.")
       setItems(Array.isArray(data.courses) ? data.courses : [])
@@ -103,11 +110,11 @@ export function CoursesManager() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [router])
 
   useEffect(() => {
     void loadCourses()
-  }, [])
+  }, [loadCourses])
 
   async function submitForm(event: React.FormEvent) {
     event.preventDefault()

@@ -54,7 +54,7 @@ export function ProtectedCourseLearning({ courseId }: { courseId: string }) {
   const [data, setData] = useState<LearningPayload | null>(null)
   const [activeLessonId, setActiveLessonId] = useState("")
 
-  const lessons = data?.lessons || []
+  const lessons = useMemo(() => data?.lessons || [], [data?.lessons])
   const progress = data?.progress
   const completedSet = useMemo(() => new Set(progress?.completedLessonIds || []), [progress?.completedLessonIds])
   const activeLesson = useMemo(() => lessons.find((lesson) => lesson.id === activeLessonId) || lessons[0] || null, [activeLessonId, lessons])

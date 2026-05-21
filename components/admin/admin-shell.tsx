@@ -27,7 +27,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       method: "POST",
       credentials: "include",
     })
-    router.push("/admin/login")
+    router.replace("/admin/login")
     router.refresh()
   }
 
