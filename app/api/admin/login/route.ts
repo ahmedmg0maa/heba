@@ -1,10 +1,11 @@
-import { timingSafeEqual } from "node:crypto"
 import { NextResponse } from "next/server"
 import {
-  ADMIN_COOKIE_NAME,
-  ADMIN_SESSION_MAX_AGE_SECONDS,
   createAdminSession,
+  getConfiguredAdminPassword,
+  isAdminPasswordConfigured,
   requireAdmin,
+  setAdminSessionCookie,
+  verifyAdminPassword,
 } from "@/lib/admin-session"
 import { validateAdminEnv } from "@/lib/env-validation"
 
@@ -16,23 +17,6 @@ const loginAttempts = new Map<string, number[]>()
 
 function text(value: unknown) {
   return typeof value === "string" ? value.trim() : ""
-}
-
-function getConfiguredAdminPassword() {
-  return (process.env.ADMIN_PASSWORD || "").trim()
-}
-
-function safeEqual(a: string, b: string) {
-  const aBuffer = Buffer.from(a)
-  const bBuffer = Buffer.from(b)
-  if (aBuffer.length !== bBuffer.length) return false
-  return timingSafeEqual(aBuffer, bBuffer)
-}
-
-function isValidAdminPassword(password: string) {
-  const configured = getConfiguredAdminPassword()
-  if (!configured) return false
-  return safeEqual(configured, password.trim())
 }
 
 function getClientIp(request: Request) {
@@ -85,7 +69,7 @@ export async function POST(request: Request) {
   const env = validateAdminEnv()
   const configuredPassword = getConfiguredAdminPassword()
 
-  if (!env.session.adminPasswordConfigured || !configuredPassword) {
+  if (!env.session.adminPasswordConfigured || !isAdminPasswordConfigured() || !configuredPassword) {
     return NextResponse.json(
       { ok: false, message: "لم يتم تفعيل لوحة الإدارة بعد. أضف ADMIN_PASSWORD في متغيرات البيئة." },
       { status: 503 },
@@ -122,7 +106,7 @@ export async function POST(request: Request) {
     cookieSet: false,
   })
 
-  if (!password || !isValidAdminPassword(password)) {
+  if (!password || !verifyAdminPassword(password)) {
     registerFailure(ip)
     return NextResponse.json({ ok: false, message: "كلمة المرور غير صحيحة." }, { status: 401 })
   }
@@ -138,15 +122,7 @@ export async function POST(request: Request) {
   }
 
   const response = NextResponse.json({ ok: true })
-  response.cookies.set({
-    name: ADMIN_COOKIE_NAME,
-    value: session.token,
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
-  })
+  setAdminSessionCookie(response, session.token)
 
   debugLoginLog({
     passwordProvided: Boolean(password),
@@ -157,3 +133,4 @@ export async function POST(request: Request) {
 
   return response
 }
+

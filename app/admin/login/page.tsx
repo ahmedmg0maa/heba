@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
 import { AlertCircle, Loader2, Lock } from "lucide-react"
@@ -16,11 +16,38 @@ type SessionResponse = {
   errors?: string[]
 }
 
+type LoginResponse = {
+  ok?: boolean
+  message?: string
+}
+
+const SESSION_CHECK_TIMEOUT_MS = 7000
 const GENERIC_LOGIN_ERROR = "تعذر تسجيل الدخول. تأكدي من كلمة المرور ثم حاولي مرة أخرى."
+const SESSION_CHECK_ERROR = "تعذر التحقق من الجلسة الحالية. تأكدي من الاتصال وحاولي مرة أخرى."
+const SESSION_CHECK_TIMEOUT_ERROR = "استغرق التحقق من الجلسة وقتًا أطول من المتوقع. حاولي مرة أخرى."
+const SESSION_INVALID_ERROR = "بيانات الجلسة غير صالحة. تم تجاهلها وعرض نموذج الدخول."
+
+const BROKEN_SESSION_REASONS = new Set(["invalid_format", "invalid_signature", "invalid_payload", "expired", "issued_in_future"])
+
+function isSessionResponse(value: unknown): value is SessionResponse {
+  if (!value || typeof value !== "object") return false
+  const session = value as Record<string, unknown>
+  if (typeof session.authenticated !== "boolean") return false
+  if (typeof session.configured !== "boolean") return false
+
+  if ("errors" in session) {
+    if (!Array.isArray(session.errors)) return false
+    if (session.errors.some((entry) => typeof entry !== "string")) return false
+  }
+
+  return true
+}
 
 export default function AdminLoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const querySetup = searchParams.get("setup") === "1"
+
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -29,42 +56,140 @@ export default function AdminLoginPage() {
   const [setupMode, setSetupMode] = useState(false)
   const [configErrors, setConfigErrors] = useState<string[]>([])
 
+  const sessionCheckInFlightRef = useRef(false)
+  const sessionCheckAbortRef = useRef<AbortController | null>(null)
+  const redirectFallbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const hasSessionRedirectedRef = useRef(false)
+
   const setupMessage = useMemo(() => {
     if (!setupMode) return ""
     if (configErrors.length > 0) return configErrors[0]
     return "لوحة الإدارة غير مفعلة بالكامل. تحققي من متغيرات البيئة."
   }, [configErrors, setupMode])
 
+  const clearRedirectFallbackTimeout = useCallback(() => {
+    if (!redirectFallbackTimeoutRef.current) return
+    clearTimeout(redirectFallbackTimeoutRef.current)
+    redirectFallbackTimeoutRef.current = null
+  }, [])
+
+  const redirectToAdmin = useCallback(
+    (source: "session" | "login") => {
+      if (source === "session" && hasSessionRedirectedRef.current) return
+      if (source === "session") hasSessionRedirectedRef.current = true
+
+      clearRedirectFallbackTimeout()
+      setIsRedirecting(true)
+      redirectFallbackTimeoutRef.current = setTimeout(() => {
+        setIsRedirecting(false)
+      }, SESSION_CHECK_TIMEOUT_MS)
+      router.replace("/admin")
+      router.refresh()
+    },
+    [clearRedirectFallbackTimeout, router],
+  )
+
+  useEffect(() => {
+    return () => {
+      clearRedirectFallbackTimeout()
+      if (sessionCheckAbortRef.current) {
+        sessionCheckAbortRef.current.abort()
+        sessionCheckAbortRef.current = null
+      }
+    }
+  }, [clearRedirectFallbackTimeout])
+
   useEffect(() => {
     let cancelled = false
-    const querySetup = searchParams.get("setup") === "1"
     setSetupMode(querySetup)
 
+    if (sessionCheckInFlightRef.current) return
+    sessionCheckInFlightRef.current = true
+
+    async function clearSessionCookie() {
+      try {
+        await fetch("/api/admin/logout", {
+          method: "POST",
+          cache: "no-store",
+          credentials: "include",
+        })
+      } catch {
+        // Ignore cleanup failures and continue rendering the login form.
+      }
+    }
+
     async function checkSession() {
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), SESSION_CHECK_TIMEOUT_MS)
+      sessionCheckAbortRef.current = controller
+
       setCheckingSession(true)
+      setError("")
+
       try {
         const response = await fetch("/admin/login/session", {
           cache: "no-store",
           credentials: "include",
+          signal: controller.signal,
         })
-        const result = (await response.json()) as SessionResponse
+
+        let payload: unknown = null
+        try {
+          payload = await response.json()
+        } catch {
+          payload = null
+        }
         if (cancelled) return
 
+        if (!response.ok) {
+          setError(SESSION_CHECK_ERROR)
+          setConfigErrors([])
+          setSetupMode(querySetup)
+          setIsRedirecting(false)
+          return
+        }
+
+        if (!isSessionResponse(payload)) {
+          void clearSessionCookie()
+          setError(SESSION_INVALID_ERROR)
+          setConfigErrors([])
+          setSetupMode(querySetup)
+          setIsRedirecting(false)
+          return
+        }
+
+        const result = payload
         const errors = Array.isArray(result.errors) ? result.errors.filter(Boolean) : []
         setConfigErrors(errors)
         setSetupMode(querySetup || !result.configured || errors.length > 0)
 
-        if (result.authenticated) {
-          setIsRedirecting(true)
+        if (result.authenticated === true) {
           setError("")
-          router.replace("/admin")
-          router.refresh()
+          redirectToAdmin("session")
           return
         }
-      } catch {
+
+        if (result.reason && BROKEN_SESSION_REASONS.has(result.reason)) {
+          void clearSessionCookie()
+        }
+        setIsRedirecting(false)
+      } catch (requestError) {
         if (cancelled) return
-        setError("تعذر التحقق من الجلسة الحالية. تأكدي من الاتصال وحاولي مرة أخرى.")
+        const aborted =
+          (requestError instanceof DOMException && requestError.name === "AbortError") ||
+          (requestError instanceof Error && requestError.name === "AbortError") ||
+          controller.signal.aborted
+
+        setError(aborted ? SESSION_CHECK_TIMEOUT_ERROR : SESSION_CHECK_ERROR)
+        setConfigErrors([])
+        setSetupMode(querySetup)
+        setIsRedirecting(false)
       } finally {
+        clearTimeout(timeoutId)
+        if (sessionCheckAbortRef.current === controller) {
+          sessionCheckAbortRef.current = null
+        }
+        sessionCheckInFlightRef.current = false
         if (!cancelled) {
           setCheckingSession(false)
         }
@@ -74,8 +199,13 @@ export default function AdminLoginPage() {
     void checkSession()
     return () => {
       cancelled = true
+      if (sessionCheckAbortRef.current) {
+        sessionCheckAbortRef.current.abort()
+        sessionCheckAbortRef.current = null
+      }
+      sessionCheckInFlightRef.current = false
     }
-  }, [router, searchParams])
+  }, [querySetup, redirectToAdmin])
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
@@ -90,9 +220,9 @@ export default function AdminLoginPage() {
         body: JSON.stringify({ password }),
       })
 
-      let result: { ok?: boolean; message?: string } = {}
+      let result: LoginResponse = {}
       try {
-        result = (await response.json()) as { ok?: boolean; message?: string }
+        result = (await response.json()) as LoginResponse
       } catch {
         // Keep fallback message.
       }
@@ -101,9 +231,7 @@ export default function AdminLoginPage() {
         throw new Error(result.message || GENERIC_LOGIN_ERROR)
       }
 
-      setIsRedirecting(true)
-      router.replace("/admin")
-      router.refresh()
+      redirectToAdmin("login")
     } catch (loginError) {
       setError(loginError instanceof Error ? loginError.message : GENERIC_LOGIN_ERROR)
     } finally {
@@ -127,7 +255,7 @@ export default function AdminLoginPage() {
           {checkingSession || isRedirecting ? (
             <div className="mb-5 flex items-center gap-2 rounded-2xl border border-border bg-background p-3 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
-              {isRedirecting ? "جارٍ التحويل إلى لوحة الإدارة..." : "جارٍ التحقق من الجلسة..."}
+              {isRedirecting ? "جارِ التحويل إلى لوحة الإدارة..." : "جارِ التحقق من الجلسة..."}
             </div>
           ) : null}
 
@@ -167,7 +295,7 @@ export default function AdminLoginPage() {
               disabled={loading || checkingSession || isRedirecting}
               className="h-12 w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
             >
-              {loading ? "جارٍ الدخول..." : "دخول"}
+              {loading ? "جارِ الدخول..." : "دخول"}
             </Button>
           </form>
         </div>
