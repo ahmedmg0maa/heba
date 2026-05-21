@@ -1,6 +1,7 @@
 import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import { ADMIN_COOKIE_NAME, requireAdmin } from "@/lib/admin-session"
+import { ADMIN_COOKIE_NAME, clearAdminSessionCookie, requireAdmin, shouldClearAdminSessionCookie } from "@/lib/admin-session"
+import { validateAdminEnv } from "@/lib/env-validation"
 
 export const runtime = "nodejs"
 
@@ -10,6 +11,7 @@ function debugMeLog(payload: { cookieExists: boolean; verified: boolean; reason:
 }
 
 export async function GET() {
+  const env = validateAdminEnv()
   const token = (await cookies()).get(ADMIN_COOKIE_NAME)?.value
   const verification = await requireAdmin()
   debugMeLog({
@@ -22,16 +24,24 @@ export async function GET() {
     authenticated: boolean
     cookieExists: boolean
     cookieName: string
+    configured: boolean
+    errors?: string[]
     reason?: string
   } = {
     authenticated: verification.ok,
     cookieExists: Boolean(token),
     cookieName: ADMIN_COOKIE_NAME,
+    configured: env.configured,
   }
 
   if (!verification.ok) {
     payload.reason = verification.reason
+    payload.errors = env.errors
   }
 
-  return NextResponse.json(payload)
+  const response = NextResponse.json(payload)
+  if (!verification.ok && shouldClearAdminSessionCookie(verification.reason)) {
+    clearAdminSessionCookie(response)
+  }
+  return response
 }

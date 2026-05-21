@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { deleteDocument, getFirebaseAdminErrorMessage, setDocument } from "@/lib/firebase/admin"
-import { requireAdmin } from "@/lib/admin-session"
+import { requireAdmin, unauthorizedAdminResponse } from "@/lib/admin-session"
 import { normalizeGoogleDriveCoverUrl, normalizeGoogleDriveResourceUrl } from "@/lib/google-drive"
 import { trackServerEvent } from "@/lib/analytics"
 
@@ -68,7 +68,7 @@ function normalizeLessons(value: unknown, courseId: string) {
 export async function PATCH(request: Request, context: RouteContext) {
   const admin = await requireAdmin()
   if (!admin.ok) {
-    return NextResponse.json({ error: "غير مصرح" }, { status: 401 })
+    return unauthorizedAdminResponse(admin)
   }
 
   const { id } = await context.params
@@ -111,6 +111,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       { status: 500 },
     )
   }
+
   void trackServerEvent("admin_action", {
     resource: "course",
     action: "update",
@@ -123,7 +124,7 @@ export async function PATCH(request: Request, context: RouteContext) {
 export async function DELETE(_request: Request, context: RouteContext) {
   const admin = await requireAdmin()
   if (!admin.ok) {
-    return NextResponse.json({ error: "غير مصرح" }, { status: 401 })
+    return unauthorizedAdminResponse(admin)
   }
 
   const { id } = await context.params
@@ -138,6 +139,7 @@ export async function DELETE(_request: Request, context: RouteContext) {
       { status: 500 },
     )
   }
+
   void trackServerEvent("admin_action", {
     resource: "course",
     action: "delete",

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { requireAdmin } from "@/lib/admin-session"
+import { requireAdmin, unauthorizedAdminResponse } from "@/lib/admin-session"
 import { getDocument, getFirebaseAdminErrorMessage, listDocuments, setDocument } from "@/lib/firebase/admin"
 import { normalizeGoogleDriveCoverUrl, normalizeGoogleDriveResourceUrl } from "@/lib/google-drive"
 import { trackServerEvent } from "@/lib/analytics"
@@ -63,16 +63,20 @@ function normalizeLessons(value: unknown, courseId: string) {
   return lessons.length ? lessons : []
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const admin = await requireAdmin()
   if (!admin.ok) {
-    return NextResponse.json({ error: "غير مصرح" }, { status: 401 })
+    return unauthorizedAdminResponse(admin)
   }
+
+  const url = new URL(request.url)
+  const rawLimit = Number.parseInt(url.searchParams.get("limit") || "100", 10)
+  const limit = Math.min(300, Math.max(20, Number.isFinite(rawLimit) ? rawLimit : 100))
 
   const courses = await listDocuments("courses", {
     orderByField: "createdAt",
     orderDirection: "desc",
-    limit: 1000,
+    limit,
   })
   return NextResponse.json({ ok: true, courses })
 }
@@ -80,7 +84,7 @@ export async function GET() {
 export async function POST(request: Request) {
   const admin = await requireAdmin()
   if (!admin.ok) {
-    return NextResponse.json({ error: "غير مصرح" }, { status: 401 })
+    return unauthorizedAdminResponse(admin)
   }
 
   let body: Record<string, unknown> = {}
@@ -132,6 +136,7 @@ export async function POST(request: Request) {
       { status: 500 },
     )
   }
+
   void trackServerEvent("admin_action", {
     resource: "course",
     action: "create",

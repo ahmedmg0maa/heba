@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation"
 import { AlertTriangle, Eye } from "lucide-react"
-import { requireAdmin } from "@/lib/admin-session"
+import { requireAdminPage } from "@/lib/admin-auth"
 import { isFirebaseConfigured, listDocuments } from "@/lib/firebase/admin"
 
 function parseDate(value: unknown) {
@@ -21,17 +20,7 @@ function formatDateTime(value: unknown) {
 }
 
 export default async function AdminAccessLogsPage() {
-  const admin = await requireAdmin()
-  if (!admin.ok) {
-    if (process.env.NODE_ENV === "development") {
-      console.info("[admin-page-auth]", { page: "/admin/access-logs", ok: false, reason: admin.reason })
-    }
-    redirect("/admin/login")
-  }
-
-  if (process.env.NODE_ENV === "development") {
-    console.info("[admin-page-auth]", { page: "/admin/access-logs", ok: true, reason: admin.reason })
-  }
+  await requireAdminPage({ debugLabel: "/admin/access-logs" })
 
   if (!isFirebaseConfigured()) {
     return (
@@ -47,7 +36,7 @@ export default async function AdminAccessLogsPage() {
   const logs = await listDocuments("protected_access_logs", {
     orderByField: "timestamp",
     orderDirection: "desc",
-    limit: 500,
+    limit: 300,
   })
 
   const suspiciousCount = logs.filter((item) => Boolean(item.suspicious)).length

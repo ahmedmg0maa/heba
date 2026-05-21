@@ -1,14 +1,26 @@
 import { NextResponse } from "next/server"
-import { requireAdmin } from "@/lib/admin-session"
+import { clearAdminSessionCookie, requireAdmin, shouldClearAdminSessionCookie } from "@/lib/admin-session"
+import { validateAdminEnv } from "@/lib/env-validation"
 
 export const runtime = "nodejs"
 
 export async function GET() {
   const admin = await requireAdmin()
-  return NextResponse.json({
+  const env = validateAdminEnv()
+  const response = NextResponse.json({
     ok: true,
-    configured: Boolean((process.env.ADMIN_PASSWORD || "").trim()),
+    configured: env.session.adminPasswordConfigured && env.session.sessionSecretConfigured,
     authenticated: admin.ok,
     reason: admin.reason,
+    env: {
+      session: env.session,
+      firebaseServiceAccount: env.firebaseServiceAccount,
+      firebasePublic: env.firebasePublic,
+    },
+    errors: env.errors,
   })
+  if (!admin.ok && shouldClearAdminSessionCookie(admin.reason)) {
+    clearAdminSessionCookie(response)
+  }
+  return response
 }

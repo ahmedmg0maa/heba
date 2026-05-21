@@ -1,6 +1,5 @@
-import { redirect } from "next/navigation"
-import { requireAdmin } from "@/lib/admin-session"
-import { listDocuments } from "@/lib/firebase/admin"
+import { requireAdminPage } from "@/lib/admin-auth"
+import { getFirebaseSetupErrorMessage, isFirebaseConfigured, listDocuments } from "@/lib/firebase/admin"
 
 function parseDate(value: unknown) {
   const date = new Date(String(value || ""))
@@ -14,22 +13,25 @@ function formatDateTime(value: unknown) {
 }
 
 export default async function AdminMessagesPage() {
-  const admin = await requireAdmin()
-  if (!admin.ok) {
-    if (process.env.NODE_ENV === "development") {
-      console.info("[admin-page-auth]", { page: "/admin/messages", ok: false, reason: admin.reason })
-    }
-    redirect("/admin/login")
-  }
+  await requireAdminPage({ debugLabel: "/admin/messages" })
 
-  if (process.env.NODE_ENV === "development") {
-    console.info("[admin-page-auth]", { page: "/admin/messages", ok: true, reason: admin.reason })
+  if (!isFirebaseConfigured()) {
+    return (
+      <div className="space-y-6" dir="rtl">
+        <div className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
+          <h1 className="text-3xl font-black text-foreground">الرسائل</h1>
+          <p className="mt-2 text-destructive">
+            {getFirebaseSetupErrorMessage() || "تعذر تحميل الرسائل بسبب إعدادات Firebase غير المكتملة."}
+          </p>
+        </div>
+      </div>
+    )
   }
 
   const messages = await listDocuments("messages", {
     orderByField: "createdAt",
     orderDirection: "desc",
-    limit: 1000,
+    limit: 250,
   })
 
   return (

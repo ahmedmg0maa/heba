@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { requireAdmin } from "@/lib/admin-session"
+import { requireAdmin, unauthorizedAdminResponse } from "@/lib/admin-session"
 import { listDocuments } from "@/lib/firebase/admin"
 
 export const runtime = "nodejs"
@@ -15,13 +15,13 @@ function csvValue(value: unknown) {
 export async function GET() {
   const admin = await requireAdmin()
   if (!admin.ok) {
-    return NextResponse.json({ error: "غير مصرح" }, { status: 401 })
+    return unauthorizedAdminResponse(admin)
   }
 
   const bookings = await listDocuments("bookings", {
     orderByField: "createdAt",
     orderDirection: "desc",
-    limit: 5000,
+    limit: 2000,
   })
 
   const headers = ["id", "customerName", "email", "phone", "date", "time", "duration", "amount", "status", "createdAt"]

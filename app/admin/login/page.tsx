@@ -1,44 +1,81 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
-import { AlertCircle, Lock } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { AlertCircle, Loader2, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
+type SessionResponse = {
+  ok?: boolean
+  configured?: boolean
+  authenticated?: boolean
+  reason?: string
+  errors?: string[]
+}
+
+const GENERIC_LOGIN_ERROR = "تعذر تسجيل الدخول. تأكدي من كلمة المرور ثم حاولي مرة أخرى."
+
 export default function AdminLoginPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
+  const [checkingSession, setCheckingSession] = useState(true)
+  const [isRedirecting, setIsRedirecting] = useState(false)
   const [setupMode, setSetupMode] = useState(false)
-  const searchParams = useSearchParams()
+  const [configErrors, setConfigErrors] = useState<string[]>([])
+
+  const setupMessage = useMemo(() => {
+    if (!setupMode) return ""
+    if (configErrors.length > 0) return configErrors[0]
+    return "لوحة الإدارة غير مفعلة بالكامل. تحققي من متغيرات البيئة."
+  }, [configErrors, setupMode])
 
   useEffect(() => {
+    let cancelled = false
     const querySetup = searchParams.get("setup") === "1"
     setSetupMode(querySetup)
 
     async function checkSession() {
+      setCheckingSession(true)
       try {
         const response = await fetch("/admin/login/session", {
           cache: "no-store",
           credentials: "include",
         })
-        const result = await response.json()
-        if (!result.configured) setSetupMode(true)
+        const result = (await response.json()) as SessionResponse
+        if (cancelled) return
+
+        const errors = Array.isArray(result.errors) ? result.errors.filter(Boolean) : []
+        setConfigErrors(errors)
+        setSetupMode(querySetup || !result.configured || errors.length > 0)
+
         if (result.authenticated) {
+          setIsRedirecting(true)
           setError("")
-          window.location.href = "/admin"
+          router.replace("/admin")
+          router.refresh()
           return
         }
       } catch {
-        // keep login form visible on network errors
+        if (cancelled) return
+        setError("تعذر التحقق من الجلسة الحالية. تأكدي من الاتصال وحاولي مرة أخرى.")
+      } finally {
+        if (!cancelled) {
+          setCheckingSession(false)
+        }
       }
     }
 
     void checkSession()
-  }, [searchParams])
+    return () => {
+      cancelled = true
+    }
+  }, [router, searchParams])
 
   async function submit(event: React.FormEvent) {
     event.preventDefault()
@@ -52,22 +89,23 @@ export default function AdminLoginPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
       })
+
       let result: { ok?: boolean; message?: string } = {}
       try {
         result = (await response.json()) as { ok?: boolean; message?: string }
       } catch {
-        // keep result empty and use fallback error
+        // Keep fallback message.
       }
+
       if (!response.ok || !result.ok) {
-        throw new Error(result.message || "تعذر تسجيل الدخول. تأكدي من كلمة المرور ثم حاولي مرة أخرى.")
+        throw new Error(result.message || GENERIC_LOGIN_ERROR)
       }
-      setError("")
-      window.location.href = "/admin"
-      return
+
+      setIsRedirecting(true)
+      router.replace("/admin")
+      router.refresh()
     } catch (loginError) {
-      setError(
-        loginError instanceof Error ? loginError.message : "تعذر تسجيل الدخول. تأكدي من كلمة المرور ثم حاولي مرة أخرى.",
-      )
+      setError(loginError instanceof Error ? loginError.message : GENERIC_LOGIN_ERROR)
     } finally {
       setLoading(false)
     }
@@ -86,10 +124,15 @@ export default function AdminLoginPage() {
         <div className="rounded-[2rem] border border-border bg-card p-6 shadow-xl sm:p-8">
           <h1 className="mb-6 text-center text-2xl font-black text-foreground">دخول الإدارة</h1>
 
-          {setupMode ? (
-            <div className="mb-5 rounded-2xl border border-accent/30 bg-accent/10 p-3 text-sm text-foreground">
-              لم يتم تفعيل لوحة الإدارة بعد.
+          {checkingSession || isRedirecting ? (
+            <div className="mb-5 flex items-center gap-2 rounded-2xl border border-border bg-background p-3 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              {isRedirecting ? "جارٍ التحويل إلى لوحة الإدارة..." : "جارٍ التحقق من الجلسة..."}
             </div>
+          ) : null}
+
+          {setupMode ? (
+            <div className="mb-5 rounded-2xl border border-accent/30 bg-accent/10 p-3 text-sm text-foreground">{setupMessage}</div>
           ) : null}
 
           {error ? (
@@ -114,13 +157,14 @@ export default function AdminLoginPage() {
                   className="h-12 rounded-2xl bg-background pr-10"
                   placeholder="أدخلي كلمة مرور الإدارة"
                   required
+                  disabled={checkingSession || isRedirecting || loading}
                 />
               </div>
             </div>
 
             <Button
               type="submit"
-              disabled={loading}
+              disabled={loading || checkingSession || isRedirecting}
               className="h-12 w-full rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
             >
               {loading ? "جارٍ الدخول..." : "دخول"}

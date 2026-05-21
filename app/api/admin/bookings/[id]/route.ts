@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { requireAdmin } from "@/lib/admin-session"
+import { requireAdmin, unauthorizedAdminResponse } from "@/lib/admin-session"
 import { getDocument, updateDocument } from "@/lib/firebase/admin"
 import { enqueueNotification } from "@/lib/notifications"
 import { trackServerEvent } from "@/lib/analytics"
@@ -17,7 +17,7 @@ function adminSetupError() {
 export async function PATCH(request: Request, context: RouteContext) {
   const admin = await requireAdmin()
   if (!admin.ok) {
-    return NextResponse.json({ error: "غير مصرح" }, { status: 401 })
+    return unauthorizedAdminResponse(admin)
   }
 
   const { id } = await context.params
@@ -61,6 +61,7 @@ export async function PATCH(request: Request, context: RouteContext) {
       email: String(existingBooking.email || ""),
     })
   }
+
   void trackServerEvent("admin_action", {
     resource: "booking",
     action: "update_status",

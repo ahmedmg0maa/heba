@@ -1,10 +1,15 @@
 import { timingSafeEqual } from "node:crypto"
 import { NextResponse } from "next/server"
-import { ADMIN_COOKIE_NAME, createAdminSession, requireAdmin } from "@/lib/admin-session"
+import {
+  ADMIN_COOKIE_NAME,
+  ADMIN_SESSION_MAX_AGE_SECONDS,
+  createAdminSession,
+  requireAdmin,
+} from "@/lib/admin-session"
+import { validateAdminEnv } from "@/lib/env-validation"
 
 export const runtime = "nodejs"
 
-const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7
 const MAX_ATTEMPTS = 6
 const WINDOW_MS = 10 * 60 * 1000
 const loginAttempts = new Map<string, number[]>()
@@ -15,10 +20,6 @@ function text(value: unknown) {
 
 function getConfiguredAdminPassword() {
   return (process.env.ADMIN_PASSWORD || "").trim()
-}
-
-function hasAdminSessionSecret() {
-  return Boolean((process.env.ADMIN_SESSION_SECRET || "").trim())
 }
 
 function safeEqual(a: string, b: string) {
@@ -81,9 +82,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true })
   }
 
+  const env = validateAdminEnv()
   const configuredPassword = getConfiguredAdminPassword()
-  if (!configuredPassword) {
-    return NextResponse.json({ ok: false, message: "لم يتم تفعيل لوحة الإدارة بعد." }, { status: 503 })
+
+  if (!env.session.adminPasswordConfigured || !configuredPassword) {
+    return NextResponse.json(
+      { ok: false, message: "لم يتم تفعيل لوحة الإدارة بعد. أضف ADMIN_PASSWORD في متغيرات البيئة." },
+      { status: 503 },
+    )
+  }
+
+  if (!env.session.sessionSecretConfigured) {
+    return NextResponse.json(
+      { ok: false, message: "المتغير ADMIN_SESSION_SECRET غير مضبوط. تعذر إنشاء جلسة الإدارة." },
+      { status: 503 },
+    )
   }
 
   const ip = getClientIp(request)
@@ -105,7 +118,7 @@ export async function POST(request: Request) {
   debugLoginLog({
     passwordProvided: Boolean(password),
     envPasswordExists: Boolean(configuredPassword),
-    sessionSecretExists: hasAdminSessionSecret(),
+    sessionSecretExists: env.session.sessionSecretConfigured,
     cookieSet: false,
   })
 
@@ -118,7 +131,10 @@ export async function POST(request: Request) {
 
   const session = await createAdminSession()
   if (!session.ok || !session.token) {
-    return NextResponse.json({ ok: false, message: "تعذر تهيئة جلسة الإدارة. راجعي إعدادات الخادم." }, { status: 503 })
+    return NextResponse.json(
+      { ok: false, message: "تعذر تهيئة جلسة الإدارة. راجعي إعدادات الخادم." },
+      { status: 503 },
+    )
   }
 
   const response = NextResponse.json({ ok: true })
@@ -131,10 +147,11 @@ export async function POST(request: Request) {
     path: "/",
     maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
   })
+
   debugLoginLog({
     passwordProvided: Boolean(password),
     envPasswordExists: Boolean(configuredPassword),
-    sessionSecretExists: hasAdminSessionSecret(),
+    sessionSecretExists: env.session.sessionSecretConfigured,
     cookieSet: true,
   })
 
