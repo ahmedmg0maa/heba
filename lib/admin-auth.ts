@@ -1,6 +1,37 @@
 import "server-only"
+import { timingSafeEqual } from "node:crypto"
 import { redirect } from "next/navigation"
-import { requireAdmin } from "@/lib/admin-session"
+import { ADMIN_COOKIE_NAME, createAdminSession, isValidAdminSessionToken, requireAdmin } from "@/lib/admin-session"
+
+export const ADMIN_SESSION_COOKIE = ADMIN_COOKIE_NAME
+
+function safeEqual(a: string, b: string) {
+  const aBuffer = Buffer.from(a)
+  const bBuffer = Buffer.from(b)
+  if (aBuffer.length !== bBuffer.length) return false
+  return timingSafeEqual(aBuffer, bBuffer)
+}
+
+export function getConfiguredAdminPassword() {
+  return (process.env.ADMIN_PASSWORD || "").trim()
+}
+
+export function hasConfiguredAdminPassword() {
+  return Boolean(getConfiguredAdminPassword())
+}
+
+export function isValidAdminPassword(password: string) {
+  const configured = getConfiguredAdminPassword()
+  if (!configured) return false
+  return safeEqual(configured, password.trim())
+}
+
+export function createAdminSessionToken() {
+  const session = createAdminSession()
+  return session.ok ? session.token : ""
+}
+
+export { isValidAdminSessionToken }
 
 type RequireAdminPageOptions = {
   redirectTo?: string

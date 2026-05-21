@@ -4,6 +4,7 @@ import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 
 export const ADMIN_COOKIE_NAME = "heba_admin_session"
+export const ADMIN_SESSION_COOKIE = ADMIN_COOKIE_NAME
 export const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7
 
 type SessionPayload = {
@@ -78,7 +79,7 @@ export function getAdminSessionSetupErrors() {
   return errors
 }
 
-export async function createAdminSession(nowMs = Date.now()) {
+export function createAdminSession(nowMs = Date.now()) {
   const secret = getAdminSessionSecret()
   if (!secret) {
     return { ok: false, reason: "missing_secret", token: "" } as const
@@ -96,7 +97,7 @@ export async function createAdminSession(nowMs = Date.now()) {
   return { ok: true, reason: "ok", token: `${encodedPayload}.${signature}` } as const
 }
 
-export async function verifyAdminSession(token?: string | null, nowMs = Date.now()): Promise<AdminSessionState> {
+export function verifyAdminSession(token?: string | null, nowMs = Date.now()): AdminSessionState {
   if (!token) return { ok: false, reason: "missing_cookie" }
 
   const [encodedPayload, signature] = token.split(".")
@@ -121,6 +122,10 @@ export async function verifyAdminSession(token?: string | null, nowMs = Date.now
   } catch {
     return { ok: false, reason: "invalid_payload" }
   }
+}
+
+export function isValidAdminSessionToken(token?: string | null, nowMs = Date.now()) {
+  return verifyAdminSession(token, nowMs).ok
 }
 
 export async function requireAdmin() {
