@@ -1,26 +1,50 @@
+import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
-import { clearAdminSessionCookie, requireAdmin, shouldClearAdminSessionCookie } from "@/lib/admin-session"
-import { validateAdminEnv } from "@/lib/env-validation"
+import { ADMIN_SESSION_COOKIE, hasConfiguredAdminPassword, isValidAdminSessionToken } from "@/lib/admin-auth"
 
 export const runtime = "nodejs"
 
 export async function GET() {
-  const admin = await requireAdmin()
-  const env = validateAdminEnv()
-  const response = NextResponse.json({
-    ok: true,
-    configured: env.session.adminPasswordConfigured && env.session.sessionSecretConfigured,
-    authenticated: admin.ok,
-    reason: admin.reason,
-    env: {
-      session: env.session,
-      firebaseServiceAccount: env.firebaseServiceAccount,
-      firebasePublic: env.firebasePublic,
-    },
-    errors: env.errors,
-  })
-  if (!admin.ok && shouldClearAdminSessionCookie(admin.reason)) {
-    clearAdminSessionCookie(response)
+  try {
+    const token = (await cookies()).get(ADMIN_SESSION_COOKIE)?.value
+    const configured = hasConfiguredAdminPassword()
+    const authenticated = isValidAdminSessionToken(token)
+    const reason = authenticated ? "ok" : token ? "invalid_session" : "missing_cookie"
+    const errors = configured ? [] : ["ADMIN_PASSWORD is missing on Vercel."]
+    const message = configured ? undefined : "ADMIN_PASSWORD is not configured in the production environment."
+
+    const response = NextResponse.json(
+      {
+        ok: true,
+        configured,
+        authenticated,
+        reason,
+        errors,
+        message,
+      },
+      {
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      },
+    )
+    return response
+  } catch (error) {
+    return NextResponse.json(
+      {
+        ok: false,
+        configured: false,
+        authenticated: false,
+        reason: "unknown_error",
+        errors: ["Session check failed on the server."],
+        message: error instanceof Error ? error.message : "Unknown session check error.",
+      },
+      {
+        status: 503,
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate",
+        },
+      },
+    )
   }
-  return response
 }

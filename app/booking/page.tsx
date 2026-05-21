@@ -2,7 +2,7 @@
 
 import type { FormEvent } from "react"
 import { useEffect, useMemo, useState } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { onAuthStateChanged } from "firebase/auth"
 import { CalendarDays, CheckCircle2, MessageCircle } from "lucide-react"
 import { Header } from "@/components/layout/header"
@@ -78,12 +78,32 @@ function slotTime(value: string) {
   return `${match[4]}:${match[5]}`
 }
 
+const CLIENT_FETCH_TIMEOUT_MS = 5000
+const FETCH_TIMEOUT_MESSAGE = "انتهت مهلة الاتصال بعد 5 ثوانٍ. يرجى المحاولة مرة أخرى."
+
+async function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit, timeoutMs = CLIENT_FETCH_TIMEOUT_MS) {
+  const controller = new AbortController()
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
+
+  try {
+    return await fetch(input, { ...init, signal: controller.signal })
+  } catch (error) {
+    const aborted =
+      (error instanceof DOMException && error.name === "AbortError") ||
+      (error instanceof Error && error.name === "AbortError")
+    if (aborted) {
+      throw new Error(FETCH_TIMEOUT_MESSAGE)
+    }
+    throw error
+  } finally {
+    clearTimeout(timeoutId)
+  }
+}
+
 export default function BookingPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const initialDuration = searchParams.get("duration") === "90" ? 90 : 60
   const [submitted, setSubmitted] = useState<BookingSuccess | null>(null)
-  const [duration, setDuration] = useState<SessionDuration>(initialDuration)
+  const [duration, setDuration] = useState<SessionDuration>(60)
   const [discountCode, setDiscountCode] = useState("")
   const [selectedDate, setSelectedDate] = useState("")
   const [selectedSlot, setSelectedSlot] = useState("")
@@ -104,6 +124,11 @@ export default function BookingPage() {
     : ""
   const minDate = useMemo(() => dateInputValue(new Date()), [])
   const selectedDateLabel = useMemo(() => formatArabicDate(selectedDate), [selectedDate])
+
+  useEffect(() => {
+    const queryDuration = new URLSearchParams(window.location.search).get("duration")
+    setDuration(queryDuration === "90" ? 90 : 60)
+  }, [])
 
   useEffect(() => {
     const auth = getFirebaseClientAuth()
@@ -127,8 +152,14 @@ export default function BookingPage() {
       setSelectedSlot("")
 
       try {
-        const response = await fetch(`/api/booking?date=${encodeURIComponent(selectedDate)}&duration=${duration}`)
-        const result = await response.json()
+        const response = await fetchWithTimeout(`/api/booking?date=${encodeURIComponent(selectedDate)}&duration=${duration}`)
+        let result: { ok?: boolean; message?: string; slots?: Slot[] } = {}
+        try {
+          result = (await response.json()) as { ok?: boolean; message?: string; slots?: Slot[] }
+        } catch {
+          result = {}
+        }
+
         if (!response.ok || !result.ok) throw new Error(result.message || "تعذر تحميل المواعيد.")
 
         const loadedSlots = Array.isArray(result.slots) ? result.slots : []
@@ -221,14 +252,23 @@ export default function BookingPage() {
     })
 
     try {
-      const response = await fetch("/api/booking", {
+      const response = await fetchWithTimeout("/api/booking", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       })
-      const result = await response.json()
-
-      
+      let result: { ok?: boolean; message?: string; bookingId?: string; status?: string; price?: BookingPrice } = {}
+      try {
+        result = (await response.json()) as {
+          ok?: boolean
+          message?: string
+          bookingId?: string
+          status?: string
+          price?: BookingPrice
+        }
+      } catch {
+        result = {}
+      }
 
       if (!response.ok || !result.ok) throw new Error(result.message || "تعذر إرسال طلب الحجز.")
       const successData = {
@@ -289,14 +329,6 @@ export default function BookingPage() {
                 </div>
               ) : (
                 <form className="grid gap-5" onSubmit={handleSubmit}>
-                  <div className="grid gap-2 rounded-2xl border border-border bg-secondary/30 p-3 text-sm sm:grid-cols-3">
-                    {["١) بياناتك", "٢) الموعد", "٣) تأكيد الحجز"].map((step) => (
-                      <p key={step} className="rounded-xl bg-background px-3 py-2 text-center font-bold text-foreground">
-                        {step}
-                      </p>
-                    ))}
-                  </div>
-
                   <div className="grid gap-5 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="name">الاسم الكامل</Label>
@@ -398,7 +430,7 @@ export default function BookingPage() {
                         <span className="font-bold">{price.finalPrice.toLocaleString("en-US")} ج.م</span>
                       </div>
                     ) : null}
-                    <p className="mt-3 text-3xl font-black text-primary latin">{price.finalPrice.toLocaleString("ar-EG")} ج.م</p>
+                    <p className="mt-3 text-3xl font-black text-primary latin">{price.finalPrice.toLocaleString("en-US")} EGP</p>
                   </div>
 
                   <div className="space-y-2">

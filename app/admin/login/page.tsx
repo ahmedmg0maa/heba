@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { AlertCircle, Loader2, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -14,6 +14,7 @@ type SessionResponse = {
   authenticated?: boolean
   reason?: string
   errors?: string[]
+  message?: string
 }
 
 type LoginResponse = {
@@ -21,13 +22,23 @@ type LoginResponse = {
   message?: string
 }
 
-const SESSION_CHECK_TIMEOUT_MS = 7000
+const SESSION_CHECK_TIMEOUT_MS = 5000
+const LOGIN_REQUEST_TIMEOUT_MS = 5000
 const GENERIC_LOGIN_ERROR = "تعذر تسجيل الدخول. تأكدي من كلمة المرور ثم حاولي مرة أخرى."
 const SESSION_CHECK_ERROR = "تعذر التحقق من الجلسة الحالية. تأكدي من الاتصال وحاولي مرة أخرى."
-const SESSION_CHECK_TIMEOUT_ERROR = "استغرق التحقق من الجلسة وقتًا أطول من المتوقع. حاولي مرة أخرى."
-const SESSION_INVALID_ERROR = "بيانات الجلسة غير صالحة. تم تجاهلها وعرض نموذج الدخول."
+const SESSION_CHECK_TIMEOUT_ERROR = "انتهت مهلة التحقق من الجلسة بعد 5 ثوانٍ. حاولي مرة أخرى."
+const LOGIN_TIMEOUT_ERROR = "انتهت مهلة تسجيل الدخول بعد 5 ثوانٍ. حاولي مرة أخرى."
+const SESSION_INVALID_ERROR = "استجابة التحقق من الجلسة غير صالحة. تم عرض نموذج الدخول بدلًا من ذلك."
+const SESSION_ENV_ERROR = "إعدادات لوحة الإدارة غير مكتملة. راجعي متغيرات البيئة في Vercel."
 
-const BROKEN_SESSION_REASONS = new Set(["invalid_format", "invalid_signature", "invalid_payload", "expired", "issued_in_future"])
+const BROKEN_SESSION_REASONS = new Set([
+  "invalid_format",
+  "invalid_signature",
+  "invalid_payload",
+  "invalid_session",
+  "expired",
+  "issued_in_future",
+])
 
 function isSessionResponse(value: unknown): value is SessionResponse {
   if (!value || typeof value !== "object") return false
@@ -43,18 +54,22 @@ function isSessionResponse(value: unknown): value is SessionResponse {
   return true
 }
 
+function getQuerySetupFromLocation() {
+  if (typeof window === "undefined") return false
+  return new URLSearchParams(window.location.search).get("setup") === "1"
+}
+
 export default function AdminLoginPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const querySetup = searchParams.get("setup") === "1"
 
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
-  const [checkingSession, setCheckingSession] = useState(true)
+  const [checkingSession, setCheckingSession] = useState(false)
   const [isRedirecting, setIsRedirecting] = useState(false)
   const [setupMode, setSetupMode] = useState(false)
   const [configErrors, setConfigErrors] = useState<string[]>([])
+  const [querySetup, setQuerySetup] = useState(false)
 
   const sessionCheckInFlightRef = useRef(false)
   const sessionCheckAbortRef = useRef<AbortController | null>(null)
@@ -64,7 +79,7 @@ export default function AdminLoginPage() {
   const setupMessage = useMemo(() => {
     if (!setupMode) return ""
     if (configErrors.length > 0) return configErrors[0]
-    return "لوحة الإدارة غير مفعلة بالكامل. تحققي من متغيرات البيئة."
+    return SESSION_ENV_ERROR
   }, [configErrors, setupMode])
 
   const clearRedirectFallbackTimeout = useCallback(() => {
@@ -88,6 +103,10 @@ export default function AdminLoginPage() {
     },
     [clearRedirectFallbackTimeout, router],
   )
+
+  useEffect(() => {
+    setQuerySetup(getQuerySetupFromLocation())
+  }, [])
 
   useEffect(() => {
     return () => {
@@ -160,13 +179,19 @@ export default function AdminLoginPage() {
 
         const result = payload
         const errors = Array.isArray(result.errors) ? result.errors.filter(Boolean) : []
+        const envInvalid = !result.configured || errors.length > 0
+
         setConfigErrors(errors)
-        setSetupMode(querySetup || !result.configured || errors.length > 0)
+        setSetupMode(querySetup || envInvalid)
 
         if (result.authenticated === true) {
           setError("")
           redirectToAdmin("session")
           return
+        }
+
+        if (envInvalid) {
+          setError(result.message || errors[0] || SESSION_ENV_ERROR)
         }
 
         if (result.reason && BROKEN_SESSION_REASONS.has(result.reason)) {
@@ -211,6 +236,8 @@ export default function AdminLoginPage() {
     event.preventDefault()
     setError("")
     setLoading(true)
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), LOGIN_REQUEST_TIMEOUT_MS)
 
     try {
       const response = await fetch("/api/admin/login", {
@@ -218,6 +245,7 @@ export default function AdminLoginPage() {
         credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
+        signal: controller.signal,
       })
 
       let result: LoginResponse = {}
@@ -233,8 +261,13 @@ export default function AdminLoginPage() {
 
       redirectToAdmin("login")
     } catch (loginError) {
-      setError(loginError instanceof Error ? loginError.message : GENERIC_LOGIN_ERROR)
+      const aborted =
+        (loginError instanceof DOMException && loginError.name === "AbortError") ||
+        (loginError instanceof Error && loginError.name === "AbortError") ||
+        controller.signal.aborted
+      setError(aborted ? LOGIN_TIMEOUT_ERROR : loginError instanceof Error ? loginError.message : GENERIC_LOGIN_ERROR)
     } finally {
+      clearTimeout(timeoutId)
       setLoading(false)
     }
   }
