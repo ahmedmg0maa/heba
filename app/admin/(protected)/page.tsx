@@ -1,9 +1,12 @@
 import Link from "next/link"
-import { redirect } from "next/navigation"
 import { BookOpen, Calendar, Eye, Layers3, MessageSquare, ShoppingCart, TrendingUp } from "lucide-react"
-import { listDocuments } from "@/lib/firebase/admin"
-import { requireAdmin } from "@/lib/admin-session"
+import { requireAdminPage } from "@/lib/admin-auth"
+import { getFirebaseSetupErrorMessage, isFirebaseConfigured, listDocuments } from "@/lib/firebase/admin"
 import { Button } from "@/components/ui/button"
+
+export const dynamic = "force-dynamic"
+export const runtime = "nodejs"
+const DASHBOARD_LIMIT = 250
 
 function numberValue(value: unknown) {
   const parsed = Number(value)
@@ -35,24 +38,27 @@ function formatDateTimeAr(value: unknown) {
 }
 
 export default async function AdminDashboardPage() {
-  const admin = await requireAdmin()
-  if (!admin.ok) {
-    if (process.env.NODE_ENV === "development") {
-      console.info("[admin-page-auth]", { page: "/admin", ok: false, reason: admin.reason })
-    }
-    redirect("/admin/login")
-  }
+  await requireAdminPage({ debugLabel: "/admin" })
 
-  if (process.env.NODE_ENV === "development") {
-    console.info("[admin-page-auth]", { page: "/admin", ok: true, reason: admin.reason })
+  if (!isFirebaseConfigured()) {
+    return (
+      <div className="space-y-6" dir="rtl">
+          <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
+            <h1 className="text-3xl font-black text-foreground">لوحة إدارة المنصة</h1>
+            <p className="mt-3 text-destructive">
+              {getFirebaseSetupErrorMessage() || "تعذر تحميل لوحة الإدارة بسبب إعدادات Firebase غير المكتملة."}
+            </p>
+          </section>
+      </div>
+    )
   }
 
   const [bookings, orders, messages, courses, books] = await Promise.all([
-    listDocuments("bookings", { orderByField: "createdAt", orderDirection: "desc", limit: 1000 }),
-    listDocuments("orders", { orderByField: "createdAt", orderDirection: "desc", limit: 1000 }),
-    listDocuments("messages", { orderByField: "createdAt", orderDirection: "desc", limit: 1000 }),
-    listDocuments("courses", { orderByField: "createdAt", orderDirection: "desc", limit: 1000 }),
-    listDocuments("books", { orderByField: "createdAt", orderDirection: "desc", limit: 1000 }),
+    listDocuments("bookings", { orderByField: "createdAt", orderDirection: "desc", limit: DASHBOARD_LIMIT }),
+    listDocuments("orders", { orderByField: "createdAt", orderDirection: "desc", limit: DASHBOARD_LIMIT }),
+    listDocuments("messages", { orderByField: "createdAt", orderDirection: "desc", limit: DASHBOARD_LIMIT }),
+    listDocuments("courses", { orderByField: "createdAt", orderDirection: "desc", limit: DASHBOARD_LIMIT }),
+    listDocuments("books", { orderByField: "createdAt", orderDirection: "desc", limit: DASHBOARD_LIMIT }),
   ])
 
   const paidOrders = orders.filter((item) => String(item.status || "").toLowerCase() === "paid")
