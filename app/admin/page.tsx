@@ -2,7 +2,6 @@ import Link from "next/link"
 import { BookOpen, Calendar, Eye, Layers3, MessageSquare, ShoppingCart, TrendingUp } from "lucide-react"
 import { requireAdminPage } from "@/lib/admin-auth"
 import { getFirebaseSetupErrorMessage, isFirebaseConfigured, listDocuments } from "@/lib/firebase/admin"
-import { AdminShell } from "@/components/admin/admin-shell"
 import { Button } from "@/components/ui/button"
 
 export const dynamic = "force-dynamic"
@@ -43,16 +42,14 @@ export default async function AdminDashboardPage() {
 
   if (!isFirebaseConfigured()) {
     return (
-      <AdminShell>
-        <div className="space-y-6" dir="rtl">
+      <div className="space-y-6" dir="rtl">
           <section className="rounded-[2rem] border border-border bg-card p-6 shadow-sm">
             <h1 className="text-3xl font-black text-foreground">لوحة إدارة المنصة</h1>
             <p className="mt-3 text-destructive">
               {getFirebaseSetupErrorMessage() || "تعذر تحميل لوحة الإدارة بسبب إعدادات Firebase غير المكتملة."}
             </p>
           </section>
-        </div>
-      </AdminShell>
+      </div>
     )
   }
 
@@ -83,8 +80,7 @@ export default async function AdminDashboardPage() {
   ]
 
   return (
-    <AdminShell>
-      <div className="space-y-8" dir="rtl">
+    <div className="space-y-8" dir="rtl">
       <div className="rounded-[2rem] bg-primary p-6 text-primary-foreground shadow-xl">
         <h1 className="text-3xl font-black">لوحة إدارة المنصة</h1>
         <p className="mt-2 text-primary-foreground/80">متابعة فورية للحجوزات والطلبات والمنتجات والنشاط اليومي.</p>
@@ -183,7 +179,6 @@ export default async function AdminDashboardPage() {
           </div>
         </section>
       </div>
-      </div>
-    </AdminShell>
+    </div>
   )
 }
