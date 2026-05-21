@@ -1,10 +1,10 @@
 import "server-only"
 import { createHmac, randomBytes, timingSafeEqual } from "node:crypto"
 import { cookies } from "next/headers"
+import { NextResponse } from "next/server"
 
 export const ADMIN_COOKIE_NAME = "heba_admin_session"
-
-const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7
+export const ADMIN_SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 7
 
 type SessionPayload = {
   iat: number
@@ -12,13 +12,32 @@ type SessionPayload = {
   nonce: string
 }
 
-type AdminSessionState = {
+export type AdminSessionReason =
+  | "ok"
+  | "missing_cookie"
+  | "invalid_format"
+  | "missing_secret"
+  | "invalid_signature"
+  | "invalid_payload"
+  | "expired"
+  | "issued_in_future"
+
+export type AdminSessionState = {
   ok: boolean
-  reason: string
+  reason: AdminSessionReason
+}
+
+type AdminSessionConfig = {
+  adminPasswordConfigured: boolean
+  sessionSecretConfigured: boolean
 }
 
 function getAdminSessionSecret() {
   return (process.env.ADMIN_SESSION_SECRET || "").trim()
+}
+
+function getAdminPassword() {
+  return (process.env.ADMIN_PASSWORD || "").trim()
 }
 
 function encodeBase64Url(input: string) {
@@ -38,6 +57,25 @@ function safeEqual(a: string, b: string) {
 
 function signPayload(encodedPayload: string, secret: string) {
   return createHmac("sha256", secret).update(encodedPayload).digest("base64url")
+}
+
+export function getAdminSessionConfig(): AdminSessionConfig {
+  return {
+    adminPasswordConfigured: Boolean(getAdminPassword()),
+    sessionSecretConfigured: Boolean(getAdminSessionSecret()),
+  }
+}
+
+export function getAdminSessionSetupErrors() {
+  const errors: string[] = []
+  const config = getAdminSessionConfig()
+  if (!config.adminPasswordConfigured) {
+    errors.push("ADMIN_PASSWORD is missing. Add a strong admin password in your environment variables.")
+  }
+  if (!config.sessionSecretConfigured) {
+    errors.push("ADMIN_SESSION_SECRET is missing. Set a long random secret used to sign admin sessions.")
+  }
+  return errors
 }
 
 export async function createAdminSession(nowMs = Date.now()) {
@@ -88,4 +126,38 @@ export async function verifyAdminSession(token?: string | null, nowMs = Date.now
 export async function requireAdmin() {
   const token = (await cookies()).get(ADMIN_COOKIE_NAME)?.value
   return verifyAdminSession(token)
+}
+
+export function shouldClearAdminSessionCookie(reason: AdminSessionReason) {
+  return reason !== "missing_cookie" && reason !== "ok"
+}
+
+export function clearAdminSessionCookie(response: NextResponse) {
+  response.cookies.set({
+    name: ADMIN_COOKIE_NAME,
+    value: "",
+    path: "/",
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 0,
+    expires: new Date(0),
+  })
+  return response
+}
+
+export function unauthorizedAdminResponse(state: AdminSessionState, message = "غير مصرح") {
+  const response = NextResponse.json(
+    {
+      ok: false,
+      authenticated: false,
+      reason: state.reason,
+      message,
+    },
+    { status: 401 },
+  )
+  if (shouldClearAdminSessionCookie(state.reason)) {
+    clearAdminSessionCookie(response)
+  }
+  return response
 }
