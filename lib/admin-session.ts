@@ -128,6 +128,20 @@ export function isValidAdminSessionToken(token?: string | null, nowMs = Date.now
   return verifyAdminSession(token, nowMs).ok
 }
 
+export function getConfiguredAdminPassword() {
+  return getAdminPassword()
+}
+
+export function isAdminPasswordConfigured() {
+  return Boolean(getConfiguredAdminPassword())
+}
+
+export function verifyAdminPassword(password: string) {
+  const configured = getConfiguredAdminPassword()
+  if (!configured) return false
+  return safeEqual(configured, password.trim())
+}
+
 export async function requireAdmin() {
   const token = (await cookies()).get(ADMIN_COOKIE_NAME)?.value
   return verifyAdminSession(token)
@@ -147,6 +161,19 @@ export function clearAdminSessionCookie(response: NextResponse) {
     secure: process.env.NODE_ENV === "production",
     maxAge: 0,
     expires: new Date(0),
+  })
+  return response
+}
+
+export function setAdminSessionCookie(response: NextResponse, token: string) {
+  response.cookies.set({
+    name: ADMIN_COOKIE_NAME,
+    value: token,
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    maxAge: ADMIN_SESSION_MAX_AGE_SECONDS,
   })
   return response
 }
