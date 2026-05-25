@@ -123,7 +123,7 @@ export default function BookForm({ initialValues, submitLabel, loading = false, 
           <input className="premium-input" type="number" min={0} value={pagesCount} onChange={(event) => setPagesCount(event.target.value)} placeholder="120" />
         </PremiumFormField>
         <PremiumFormField label="رابط صورة الغلاف">
-          <input className="premium-input" dir="ltr" value={coverImageUrl} onChange={(event) => setCoverImageUrl(event.target.value)} placeholder="https://..." />
+          <input className="premium-input" dir="ltr" value={coverImageUrl} onChange={(event) => setCoverImageUrl(event.target.value)} placeholder="/images/books/book-default.jpg أو https://..." />
         </PremiumFormField>
         <PremiumFormField label="رابط ملف Google Drive" hint="رابط داخلي للنسخة الأصلية أو ملف القراءة.">
           <input className="premium-input" dir="ltr" value={driveFileUrl} onChange={(event) => setDriveFileUrl(event.target.value)} placeholder="https://drive.google.com/..." />

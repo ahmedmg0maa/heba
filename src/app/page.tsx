@@ -14,6 +14,7 @@ import ImageSlot from '@/components/ui/ImageSlot'
 import FAQSection from '@/components/marketing/FAQSection'
 import LeadMagnet from '@/components/marketing/LeadMagnet'
 import PremiumAssessment from '@/components/marketing/PremiumAssessment'
+import { IMAGE_SLOTS } from '@/constants/content'
 
 const trustStats = [
   { value: '+7', label: 'سنوات من الخبرة والتأثير' },
@@ -124,6 +125,7 @@ export default function HomePage() {
                   <div className="absolute -right-4 top-8 hidden h-[420px] w-[420px] rounded-full border border-gold/35 lg:block" />
                   <div className="relative overflow-hidden rounded-[2.4rem] border border-sand bg-cream/70 p-4 shadow-botanical">
                     <ImageSlot
+                      fallbackSrc={IMAGE_SLOTS.hero}
                       variant="hero"
                       ratio="free"
                       label="صورة هادئة لهبة أو مساحة الجلسة"
@@ -195,6 +197,7 @@ export default function HomePage() {
           <HomePanel title="جلسات خاصة" href="/booking" action="عرض جميع الجلسات">
             <div className="grid gap-4 md:grid-cols-[0.95fr_1.05fr] lg:grid-cols-[0.9fr_1.1fr]">
               <ImageSlot
+                fallbackSrc={IMAGE_SLOTS.session}
                 variant="session"
                 ratio="free"
                 label="صورة الجلسات"
@@ -245,6 +248,7 @@ export default function HomePage() {
             <MotionReveal>
               <div className="luxury-shell rounded-[2.5rem] p-6">
                 <ImageSlot
+                  fallbackSrc={IMAGE_SLOTS.about}
                   variant="portrait"
                   ratio="portrait"
                   label="صورة هبة الشريف"
@@ -303,7 +307,7 @@ export default function HomePage() {
                 <p className="mt-2 text-lg font-bold leading-10 text-charcoal">غيّرت دورات هبة حياتي بالكامل. تعلمت كيف أضع حدودًا صحية، أحب نفسي بعمق، وأختار ما يشبهني مع فهمي لنفسي بشكل أكثر لطفًا.</p>
                 <div className="mt-7 flex items-center justify-between gap-4">
                   <div className="flex items-center gap-3">
-                    <ImageSlot variant="soft" ratio="square" label="صورة المستفيدة" className="h-12 w-12 rounded-full" showLabel={false} />
+                    <ImageSlot fallbackSrc={IMAGE_SLOTS.avatar} variant="soft" ratio="square" label="صورة المستفيدة" className="h-12 w-12 rounded-full" showLabel={false} />
                     <div>
                       <p className="text-sm font-black text-charcoal">سارة م.</p>
                       <p className="text-xs font-bold text-warm-gray">مشتركة في رحلة إلى الذات</p>
@@ -370,7 +374,7 @@ function HomePanel({ title, href, action, children }: { title: string; href: str
 function FeaturedCourseCard({ title, promise, lessons, price, badge, variant }: { title: string; promise: string; lessons: string; price: string; badge: string; variant: 'course' | 'session' | 'brand' }) {
   return (
     <Link href="/courses" className="group block overflow-hidden rounded-[1.6rem] border border-sand bg-cream/70 shadow-soft transition duration-300 hover:-translate-y-1 hover:shadow-premium">
-      <ImageSlot variant={variant} ratio="video" label="صورة الدورة" className="rounded-none border-0 shadow-none" showLabel={false} />
+      <ImageSlot fallbackSrc={variant === 'course' ? IMAGE_SLOTS.course : variant === 'session' ? IMAGE_SLOTS.session : IMAGE_SLOTS.journal} variant={variant} ratio="video" label="صورة الدورة" className="rounded-none border-0 shadow-none" showLabel={false} />
       <div className="p-4">
         <span className="mb-3 inline-flex rounded-full bg-burgundy/10 px-3 py-1 text-[11px] font-black text-burgundy">{badge}</span>
         <h3 className="text-base font-black leading-7 text-charcoal transition group-hover:text-petrol">{title}</h3>
@@ -392,7 +396,7 @@ function FeaturedBookCard({ title, subtitle, price, image }: { title: string; su
           <Image src={image} alt={title} fill className="object-cover transition duration-500 group-hover:scale-105" sizes="140px" />
         </div>
       ) : (
-        <ImageSlot variant="book" ratio="book" label="غلاف الكتاب" className="mx-auto mb-4 max-w-[120px] rounded-xl" showLabel={false} />
+        <ImageSlot fallbackSrc={IMAGE_SLOTS.book} variant="book" ratio="book" label="غلاف الكتاب" className="mx-auto mb-4 max-w-[120px] rounded-xl" showLabel={false} />
       )}
       <h3 className="text-sm font-black leading-6 text-charcoal transition group-hover:text-petrol">{title}</h3>
       <p className="mt-2 line-clamp-2 text-xs leading-5 text-warm-gray">{subtitle}</p>

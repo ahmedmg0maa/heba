@@ -9,6 +9,7 @@ import CourseCard from '@/components/courses/CourseCard'
 import BrandDivider from '@/components/brand/BrandDivider'
 import BrandOrnament from '@/components/brand/BrandOrnament'
 import ImageSlot from '@/components/ui/ImageSlot'
+import { IMAGE_SLOTS } from '@/constants/content'
 import PremiumBadge from '@/components/ui/PremiumBadge'
 import PremiumButton from '@/components/ui/PremiumButton'
 import PremiumEmptyState from '@/components/ui/PremiumEmptyState'
@@ -289,6 +290,7 @@ export default function CoursesPage() {
 
               <div className="overflow-hidden rounded-[2rem] border border-sand bg-petrol text-ivory shadow-premium">
                 <ImageSlot
+                  fallbackSrc={IMAGE_SLOTS.journal}
                   ratio="square"
                   variant="brand"
                   label="مساحة صورة ملهمة"
@@ -331,6 +333,7 @@ function FeaturedCourse({ course }: { course: Course }) {
       <div className="relative grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
         <ImageSlot
           src={course.heroImageUrl || course.coverImageUrl}
+          fallbackSrc={IMAGE_SLOTS.course}
           alt={course.title}
           ratio="video"
           variant="course"

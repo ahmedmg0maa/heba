@@ -204,7 +204,7 @@ export default function CourseForm({ initialValues, submitLabel, loading = false
           <input className="premium-input" value={level} onChange={(event) => setLevel(event.target.value)} placeholder="مناسب لكل المستويات" />
         </PremiumFormField>
         <PremiumFormField label="رابط صورة الغلاف">
-          <input className="premium-input" dir="ltr" value={coverImageUrl} onChange={(event) => setCoverImageUrl(event.target.value)} placeholder="https://..." />
+          <input className="premium-input" dir="ltr" value={coverImageUrl} onChange={(event) => setCoverImageUrl(event.target.value)} placeholder="/images/courses/course-default.jpg أو https://..." />
         </PremiumFormField>
         <PremiumFormField label="رابط فيديو تعريفي">
           <input className="premium-input" dir="ltr" value={previewVideoUrl} onChange={(event) => setPreviewVideoUrl(event.target.value)} placeholder="Google Drive / YouTube / Vimeo" />

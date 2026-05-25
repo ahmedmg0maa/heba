@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import Navbar from '@/components/layout/Navbar'
 import Footer from '@/components/layout/Footer'
 import ImageSlot from '@/components/ui/ImageSlot'
+import { IMAGE_SLOTS } from '@/constants/content'
 import PremiumButton from '@/components/ui/PremiumButton'
 import PremiumFormField from '@/components/ui/PremiumFormField'
 import BrandDivider from '@/components/brand/BrandDivider'
@@ -789,6 +790,7 @@ export default function BookingPage() {
 
             <aside className="space-y-5 xl:sticky xl:top-28">
               <ImageSlot
+                fallbackSrc={IMAGE_SLOTS.session}
                 ratio="portrait"
                 variant="session"
                 label="صورة مساحة الجلسة"

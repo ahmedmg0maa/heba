@@ -8,6 +8,7 @@ import BookCard from '@/components/books/BookCard'
 import BrandDivider from '@/components/brand/BrandDivider'
 import BrandMark from '@/components/brand/BrandMark'
 import ImageSlot from '@/components/ui/ImageSlot'
+import { IMAGE_SLOTS } from '@/constants/content'
 import PremiumBadge from '@/components/ui/PremiumBadge'
 import PremiumButton from '@/components/ui/PremiumButton'
 import PremiumEmptyState from '@/components/ui/PremiumEmptyState'
@@ -122,6 +123,7 @@ export default function BooksPage() {
             <div className="relative">
               <ImageSlot
                 src={featuredBook?.coverImageUrl}
+                fallbackSrc={IMAGE_SLOTS.book}
                 ratio="book"
                 variant="book"
                 label="غلاف كتاب مميز"

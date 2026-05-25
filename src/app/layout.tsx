@@ -26,14 +26,27 @@ export const metadata: Metadata = {
     siteName: 'هبة الشريف',
     locale: 'ar_EG',
     type: 'website',
+    images: [
+      {
+        url: '/images/social/og-home.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'هبة الشريف — رحلة وعي تعيدك إلى ذاتك',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'هبة الشريف — منصة التحوّل العاطفي',
     description: 'كورسات، كتب، وجلسات فردية في تجربة عربية فاخرة وهادئة.',
+    images: ['/images/social/og-home.jpg'],
   },
   robots: { index: true, follow: true },
   manifest: '/site.webmanifest',
+  icons: {
+    icon: '/favicon.png',
+    apple: '/apple-icon.png',
+  },
 }
 
 export const viewport: Viewport = {
