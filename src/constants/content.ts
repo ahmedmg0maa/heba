@@ -129,12 +129,20 @@ export const TESTIMONIALS = [
 ]
 
 export const IMAGE_SLOTS = {
-  hero: '/images/brand/hero-placeholder.svg',
-  about: '/images/brand/about-placeholder.svg',
-  session: '/images/brand/session-placeholder.svg',
-  course: '/images/courses/course-placeholder.svg',
-  book: '/images/books/book-placeholder.svg',
-  avatar: '/images/testimonials/avatar-placeholder.svg',
+  hero: '/images/heba/heba-hero.jpg',
+  about: '/images/heba/heba-about.jpg',
+  profile: '/images/heba/heba-profile.jpg',
+  session: '/images/heba/heba-session.jpg',
+  course: '/images/courses/course-default.jpg',
+  book: '/images/books/book-default.jpg',
+  avatar: '/images/testimonials/testimonial-default.jpg',
+  journal: '/images/articles/article-default.jpg',
+  brandBackground: '/images/brand/brand-background.jpg',
+  brandPattern: '/images/brand/brand-pattern.jpg',
+  ogHome: '/images/social/og-home.jpg',
+  ogCourses: '/images/social/og-courses.jpg',
+  ogBooks: '/images/social/og-books.jpg',
+  ogBooking: '/images/social/og-booking.jpg',
 }
 
 export const LEGAL_PAGES = {

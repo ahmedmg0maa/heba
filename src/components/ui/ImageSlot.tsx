@@ -36,6 +36,16 @@ const variantClasses: Record<SlotVariant, string> = {
   soft: 'from-sand/70 via-ivory to-cream',
 }
 
+const temporaryVariantImages: Record<SlotVariant, string> = {
+  hero: '/images/heba/heba-hero.jpg',
+  portrait: '/images/heba/heba-about.jpg',
+  session: '/images/heba/heba-session.jpg',
+  course: '/images/courses/course-default.jpg',
+  book: '/images/books/book-default.jpg',
+  brand: '/images/brand/brand-background.jpg',
+  soft: '/images/brand/brand-pattern.jpg',
+}
+
 export default function ImageSlot({
   src,
   fallbackSrc = '',
@@ -48,7 +58,7 @@ export default function ImageSlot({
   variant = 'soft',
   showLabel = true,
 }: ImageSlotProps) {
-  const imageSrc = src?.trim() || fallbackSrc.trim()
+  const imageSrc = src?.trim() || fallbackSrc.trim() || temporaryVariantImages[variant]
 
   return (
     <div
