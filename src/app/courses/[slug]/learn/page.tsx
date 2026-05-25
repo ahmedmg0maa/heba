@@ -96,7 +96,7 @@ export default function CourseLearnPage() {
         }
 
         const [lessonsData, progressSnap] = await Promise.all([
-          getCourseLessons(courseData.id),
+          getCourseLessons(courseData.id, token),
           getDoc(doc(db, 'course_progress', `${userId}_${courseData.id}`)),
         ])
 
@@ -111,7 +111,7 @@ export default function CourseLearnPage() {
         setActiveLessonId(initialLessonId)
       } catch (loadError) {
         console.error('Course learn load error:', loadError)
-        setError('تعذر تحميل محتوى الكورس الآن.')
+        setError('المحتوى غير متاح الآن. راجعي حالة الطلب من لوحة حسابك أو تواصلي معنا.')
       } finally {
         setLoading(false)
       }

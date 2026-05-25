@@ -31,7 +31,7 @@ const courseFaq = [
     answer: 'بعد إرسال طلب الشراء وتأكيد الدفع من الإدارة، يتم فتح الوصول تلقائيًا داخل حسابك.'
   },
   {
-    question: 'هل يمكنني الرجوع للمحتوى لاحقًا؟',
+    question: 'هل يمكنني الرجوع للمحتوى بعد فتح الوصول؟',
     answer: 'نعم. بعد تأكيد الوصول يبقى المحتوى داخل لوحة رحلتك ويمكنكِ المتابعة من حيث توقفتِ.'
   },
   {
@@ -80,7 +80,7 @@ export default function CourseDetailsPage() {
         setLessons(lessonsData)
       } catch (loadError) {
         console.error('Course details error:', loadError)
-        setError('تعذر تحميل بيانات الكورس الآن. حاولي مرة أخرى لاحقًا.')
+        setError('')
       } finally {
         setLoading(false)
       }
@@ -128,9 +128,9 @@ export default function CourseDetailsPage() {
           <section className="container-premium py-12">
             <PremiumEmptyState
               icon="!"
-              title="حدث خطأ"
-              description={error}
-              actionLabel="العودة للكورسات"
+              title="قريبًا"
+              description="هذا المسار غير متاح للعرض الآن. يمكنكِ العودة للمسارات أو البدء من دليل البداية."
+              actionLabel="عرض المسارات"
               actionHref="/courses"
             />
           </section>
@@ -140,8 +140,8 @@ export default function CourseDetailsPage() {
           <section className="container-premium py-12">
             <PremiumEmptyState
               icon="✦"
-              title="الكورس غير موجود"
-              description="قد يكون الكورس قيد المراجعة أو تم تغيير الرابط."
+              title="هذا المسار قيد التحضير"
+              description="نجهّز التجربة لتظهر بشكل كامل عندما تكون مناسبة للنشر."
               actionLabel="عرض كل الكورسات"
               actionHref="/courses"
             />
@@ -201,7 +201,7 @@ export default function CourseDetailsPage() {
                     </PremiumButton>
                     <div className="sm:mr-auto text-right">
                       <span className="block text-xs font-black text-warm-gray">الاستثمار في الرحلة</span>
-                      <strong className="text-3xl font-black text-petrol">{formatEGP(course.price)}</strong>
+                      {Number(course.price) > 0 ? <strong className="text-3xl font-black text-petrol">{formatEGP(course.price)}</strong> : null}
                     </div>
                   </div>
                 </div>
@@ -316,7 +316,7 @@ export default function CourseDetailsPage() {
                                         </div>
                                         <div className="hidden items-center gap-3 text-xs font-black text-warm-gray sm:flex">
                                           <span>{lesson.duration} دقيقة</span>
-                                          <span>{lesson.contentUrl ? 'مع محتوى' : 'مقفل'}</span>
+                                          <span>{'تفاصيل الدرس'}</span>
                                         </div>
                                       </div>
                                     ))}
@@ -362,7 +362,7 @@ export default function CourseDetailsPage() {
                 <aside className="space-y-6 lg:sticky lg:top-28 lg:h-fit">
                   <div className="premium-glow-border rounded-[2rem] border border-sand bg-ivory/92 p-6 shadow-premium backdrop-blur-md dark:bg-deep-teal/65">
                     <p className="text-sm font-black text-gold">الاستثمار في الرحلة</p>
-                    <strong className="mt-3 block text-4xl font-black text-petrol">{formatEGP(course.price)}</strong>
+                    {Number(course.price) > 0 ? <strong className="mt-3 block text-4xl font-black text-petrol">{formatEGP(course.price)}</strong> : null}
                     <p className="mt-4 text-sm leading-7 text-warm-gray">
                       بعد إرسال طلب الشراء، يظهر الطلب داخل لوحة حسابك. عند تأكيد الدفع من الإدارة، يتم فتح محتوى الكورس تلقائيًا.
                     </p>
@@ -401,7 +401,7 @@ export default function CourseDetailsPage() {
                       ratio="square"
                       variant="brand"
                       label="صورة المدربة"
-                      hint="يمكن إضافة صورة هبة هنا لاحقًا."
+                      hint="تكوين بصري من هوية هبة الشريف."
                       className="rounded-none border-0 shadow-none"
                     />
                     <div className="p-6">

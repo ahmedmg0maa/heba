@@ -7,48 +7,48 @@
   --font-serif: Georgia, 'Times New Roman', serif;
 
   /* Heba ElSherif official botanical premium palette */
-  --color-cream: 245 240 231;       /* #f5f0e7 */
-  --color-ivory: 250 247 242;       /* #faf7f2 */
-  --color-paper: 252 247 239;
-  --color-warm-beige: 228 215 199;  /* #e4d7c7 */
-  --color-sand: 233 224 210;
-  --color-soft-sand: 215 201 179;
-  --color-stone: 200 193 182;
-  --color-petrol: 47 97 115;        /* #2f6173 */
-  --color-deep-teal: 15 50 55;      /* deep premium teal */
-  --color-aqua: 105 198 179;        /* logo glow */
-  --color-gold: 183 155 96;         /* #b79b60 */
-  --color-olive: 111 106 47;        /* #6f6a2f */
-  --color-leaf-gray: 91 108 95;
-  --color-burgundy: 122 36 51;      /* #7a2433 */
-  --color-rose: 161 103 108;
-  --color-mauve: 177 143 135;
-  --color-warm-gray: 126 118 109;
-  --color-charcoal: 42 42 42;
-  --color-shadow: 52 46 41;
+  --color-cream: 245 240 231;       /* #F5F0E7 */
+  --color-ivory: 245 240 231;       /* #F5F0E7 */
+  --color-paper: 245 240 231;       /* #F5F0E7 */
+  --color-warm-beige: 228 215 199;  /* #E4D7C7 */
+  --color-sand: 228 215 199;        /* #E4D7C7 */
+  --color-soft-sand: 228 215 199;   /* #E4D7C7 */
+  --color-stone: 183 155 96;        /* #B79B60 */
+  --color-petrol: 47 97 115;        /* #2F6173 */
+  --color-deep-teal: 15 50 55;      /* #0F3237 */
+  --color-aqua: 47 97 115;          /* brand teal derivative */
+  --color-gold: 183 155 96;         /* #B79B60 */
+  --color-olive: 111 106 47;        /* #6F6A2F */
+  --color-leaf-gray: 111 106 47;    /* #6F6A2F */
+  --color-burgundy: 122 36 51;      /* #7A2433 */
+  --color-rose: 122 36 51;          /* #7A2433 */
+  --color-mauve: 183 155 96;        /* #B79B60 */
+  --color-warm-gray: 111 106 47;    /* #6F6A2F */
+  --color-charcoal: 15 50 55;       /* #0F3237 */
+  --color-shadow: 15 50 55;
   color-scheme: light;
 }
 
 .dark {
-  --color-cream: 18 22 23;
-  --color-ivory: 25 31 32;
-  --color-paper: 29 35 36;
-  --color-warm-beige: 73 70 64;
-  --color-sand: 61 69 68;
-  --color-soft-sand: 84 83 73;
-  --color-stone: 105 111 107;
-  --color-petrol: 126 179 190;
-  --color-deep-teal: 8 25 28;
-  --color-aqua: 122 215 198;
-  --color-gold: 209 178 113;
-  --color-olive: 158 157 105;
-  --color-leaf-gray: 141 158 143;
-  --color-burgundy: 193 107 120;
-  --color-rose: 184 138 131;
-  --color-mauve: 156 134 126;
-  --color-warm-gray: 205 196 184;
-  --color-charcoal: 247 241 232;
-  --color-shadow: 0 0 0;
+  --color-cream: 15 50 55;
+  --color-ivory: 18 57 62;
+  --color-paper: 20 66 72;
+  --color-warm-beige: 228 215 199;
+  --color-sand: 111 106 47;
+  --color-soft-sand: 183 155 96;
+  --color-stone: 183 155 96;
+  --color-petrol: 158 205 212;
+  --color-deep-teal: 15 50 55;
+  --color-aqua: 228 215 199;
+  --color-gold: 183 155 96;
+  --color-olive: 228 215 199;
+  --color-leaf-gray: 228 215 199;
+  --color-burgundy: 196 97 113;
+  --color-rose: 196 97 113;
+  --color-mauve: 183 155 96;
+  --color-warm-gray: 228 215 199;
+  --color-charcoal: 245 240 231;
+  --color-shadow: 15 50 55;
   color-scheme: dark;
 }
 
@@ -95,7 +95,7 @@ body::after {
   background-image:
     linear-gradient(rgb(var(--color-petrol) / .028) 1px, transparent 1px),
     linear-gradient(90deg, rgb(var(--color-gold) / .03) 1px, transparent 1px),
-    radial-gradient(circle at 50% 42%, rgb(255 255 255 / .40), transparent 36rem);
+    radial-gradient(circle at 50% 42%, rgb(var(--color-cream) / .40), transparent 36rem);
   background-size: 88px 88px, 88px 88px, 100% 100%;
   mask-image: radial-gradient(circle at center, black 0%, black 62%, transparent 100%);
   animation: pattern-breathe 24s ease-in-out infinite alternate;
@@ -106,7 +106,7 @@ body::after {
     radial-gradient(circle at 84% 8%, rgb(var(--color-gold) / .08), transparent 28rem),
     radial-gradient(circle at 8% 18%, rgb(var(--color-petrol) / .16), transparent 32rem),
     radial-gradient(circle at 76% 92%, rgb(var(--color-olive) / .10), transparent 28rem),
-    linear-gradient(135deg, rgb(14 18 19) 0%, rgb(var(--color-cream)) 54%, rgb(var(--color-ivory)) 100%);
+    linear-gradient(135deg, rgb(var(--color-deep-teal)) 0%, rgb(var(--color-cream)) 54%, rgb(var(--color-ivory)) 100%);
 }
 .dark body::before { opacity: .72; }
 .dark body::after { opacity: .18; }
@@ -209,7 +209,7 @@ img, video { max-width: 100%; height: auto; }
 .ornamental-corner-bottom { bottom: 1rem; left: 1rem; border-right: 0; border-top: 0; border-bottom-left-radius: 2rem; }
 
 .brand-mark-gradient {
-  background: linear-gradient(180deg, rgb(var(--color-deep-teal)), rgb(var(--color-petrol)) 56%, rgb(var(--color-aqua)));
+  background: linear-gradient(180deg, rgb(var(--color-deep-teal)), rgb(var(--color-petrol)) 56%, rgb(var(--color-warm-beige)));
 }
 .brand-luxury-veil {
   background:
@@ -373,3 +373,10 @@ img, video { max-width: 100%; height: auto; }
   .premium-label { @apply text-sm font-black text-charcoal; }
   .premium-muted { @apply text-sm leading-relaxed text-warm-gray; }
 }
+
+
+/* V3.3 brand hardening */
+.dark .premium-input, .dark input, .dark textarea, .dark select { color: rgb(var(--color-charcoal)); background-color: rgb(var(--color-ivory) / .78); border-color: rgb(var(--color-gold) / .24); }
+.dark .premium-label, .dark .premium-muted { color: rgb(var(--color-charcoal)); }
+.dark .brand-title, .dark .brand-subtitle { color: rgb(var(--color-charcoal)); }
+.visitor-only-copy { color: rgb(var(--color-warm-gray)); }

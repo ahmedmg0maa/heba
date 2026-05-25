@@ -16,10 +16,10 @@ import LeadMagnet from '@/components/marketing/LeadMagnet'
 import PremiumAssessment from '@/components/marketing/PremiumAssessment'
 
 const trustStats = [
-  { value: 'RTL', label: 'تجربة عربية بالكامل' },
-  { value: 'EGP', label: 'تسعير واضح بالجنيه المصري' },
-  { value: '1:1', label: 'جلسات فردية عند الحاجة' },
-  { value: 'محمي', label: 'وصول للمحتوى بعد التأكيد' },
+  { value: '1:1', label: 'جلسات فردية بخصوصية وهدوء' },
+  { value: 'وعي', label: 'لغة تساعدك على فهم ذاتك' },
+  { value: 'آمن', label: 'محتوى يفتح بعد التأكيد فقط' },
+  { value: 'هادئ', label: 'تجربة بلا ضغط أو استعجال' },
 ]
 
 const pathCards = [
@@ -31,17 +31,17 @@ const pathCards = [
     icon: '✦',
   },
   {
-    title: 'اختاري كورسًا',
-    text: 'لو تريدين مسارًا منظمًا تتعلمين فيه على مهل وتعودين له داخل حسابك.',
+    title: 'اختاري مسار تعلم',
+    text: 'لو تريدين رحلة منظمة تتعلمين فيها على مهل وتعودين لها داخل حسابك.',
     href: '/courses',
-    cta: 'تصفحي الكورسات',
+    cta: 'تصفحي المسارات',
     icon: '☉',
   },
   {
-    title: 'افتحي كتابًا',
+    title: 'افتحي باب القراءة',
     text: 'لو تحتاجين رفيقًا هادئًا للقراءة والتأمل والكتابة في وقتك الخاص.',
     href: '/books',
-    cta: 'شاهدي الكتب',
+    cta: 'شاهدي المكتبة',
     icon: '❋',
   },
 ]
@@ -53,10 +53,10 @@ const transformationCards = [
   { from: 'تشتت في الاختيار', to: 'مسار يناسب مرحلتك الحالية' },
 ]
 
-const communityNotes = [
-  'كل كورس أو كتاب سيظهر فقط عند إضافته ونشره من لوحة الإدارة.',
-  'التقييمات لا تظهر للجمهور إلا بعد وجود مراجعات حقيقية ومعتمدة.',
-  'الصور الحالية مساحات براند فاخرة بدون وجوه أو صور وهمية لحين إضافة أصول هبة الرسمية.',
+const promiseNotes = [
+  'مساحة تحترم خصوصيتك ووتيرتك، ولا تستخدم ضغطًا أو وعودًا علاجية.',
+  'كل تجربة تُعرض للزائرة عندما تكون جاهزة للنشر والتشغيل.',
+  'الأولوية للوضوح، الأمان، وخطوة عملية صغيرة تشبهك.',
 ]
 
 export default function HomePage() {
@@ -66,30 +66,30 @@ export default function HomePage() {
 
       <main id="main-content" className="min-h-screen pt-20">
         <section className="container-wide px-2 pb-4 pt-4 sm:px-0">
-          <div className="premium-glow-border botanical-frame paper-texture relative overflow-hidden rounded-[2rem] border border-sand bg-ivory/88 shadow-premium lg:rounded-[2.75rem] dark:bg-deep-teal/55">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_12%,rgb(var(--color-gold)/.18),transparent_22rem),radial-gradient(circle_at_15%_12%,rgb(var(--color-petrol)/.10),transparent_22rem)]" />
+          <div className="premium-glow-border botanical-frame paper-texture relative overflow-hidden rounded-[2rem] border border-sand bg-ivory/88 shadow-premium lg:rounded-[2.75rem] dark:bg-deep-teal/70">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_78%_12%,rgb(var(--color-gold)/.18),transparent_22rem),radial-gradient(circle_at_15%_12%,rgb(var(--color-petrol)/.12),transparent_22rem)]" />
             <div className="ambient-orb ambient-orb-gold right-4 top-10 h-64 w-64" />
             <div className="ambient-orb ambient-orb-petrol bottom-4 left-10 h-80 w-80" />
             <div className="relative grid min-h-[620px] items-center gap-8 p-5 md:p-8 lg:grid-cols-[0.92fr_1.08fr] lg:p-10 xl:p-14">
               <MotionReveal className="order-2 lg:order-1">
                 <div className="relative">
                   <div className="absolute -right-4 top-8 hidden h-[420px] w-[420px] rounded-full border border-gold/35 lg:block" />
-                  <div className="relative overflow-hidden rounded-[2.4rem] border border-sand bg-cream/70 p-4 shadow-botanical dark:bg-deep-teal/40">
+                  <div className="relative overflow-hidden rounded-[2.4rem] border border-sand bg-cream/70 p-4 shadow-botanical dark:bg-deep-teal/50">
                     <ImageSlot
                       variant="hero"
                       ratio="free"
-                      label="مساحة الصورة الرسمية"
-                      hint="سيتم وضع صورة هبة أو أصل براند رسمي هنا عند توفره."
+                      label="رحلة وعي"
+                      hint="تكوين بصري من هوية هبة الشريف"
                       className="min-h-[390px] rounded-[2rem]"
                       showLabel={false}
                     />
-                    <div className="absolute inset-4 rounded-[2rem] bg-[linear-gradient(90deg,rgb(var(--color-cream)/.14),transparent_36%,rgb(var(--color-ivory)/.42))]" />
-                    <div className="absolute bottom-8 left-8 right-8 rounded-[1.8rem] border border-white/55 bg-ivory/86 p-5 shadow-soft backdrop-blur-xl dark:border-gold/15 dark:bg-deep-teal/88">
+                    <div className="absolute inset-4 rounded-[2rem] bg-[linear-gradient(90deg,rgb(var(--color-cream)/.12),transparent_36%,rgb(var(--color-ivory)/.32))]" />
+                    <div className="absolute bottom-8 left-8 right-8 rounded-[1.8rem] border border-gold/20 bg-ivory/88 p-5 shadow-soft backdrop-blur-xl dark:bg-deep-teal/90">
                       <div className="flex items-center gap-3">
                         <BrandOrnament className="scale-75" />
                         <span className="mini-label">نقطة وعي</span>
                       </div>
-                      <h2 className="mt-3 text-2xl font-black leading-tight text-petrol">مساحة هادئة لاكتشاف رسالتك، واختيار طريقك بوعي.</h2>
+                      <h2 className="mt-3 text-2xl font-black leading-tight text-petrol dark:text-ivory">مساحة هادئة لاكتشاف رسالتك، واختيار طريقك بوعي.</h2>
                     </div>
                   </div>
                 </div>
@@ -101,22 +101,22 @@ export default function HomePage() {
                     <BrandMark size="lg" showText={false} />
                   </div>
                   <PremiumBadge variant="gold">رحلة وعي تعيدك إلى ذاتك</PremiumBadge>
-                  <h1 className="mt-6 text-balance text-5xl font-black leading-[1.25] text-charcoal md:text-7xl dark:text-ivory">
+                  <h1 className="mt-6 text-balance text-5xl font-black leading-[1.25] text-charcoal md:text-7xl">
                     افهمي نفسك بهدوء
-                    <span className="mt-2 block text-petrol">واختاري طريقك بوعي</span>
+                    <span className="mt-2 block text-petrol dark:text-gold">واختاري طريقك بوعي</span>
                   </h1>
                   <p className="mx-auto mt-6 max-w-2xl text-base leading-9 text-warm-gray md:text-lg lg:mx-0">
-                    منصة عربية فاخرة للكوتشنج، الوعي بالذات، الكتب الرقمية، والكورسات. كل شيء هنا مصمم ليقودك بلطف، بدون وعود علاجية أو محتوى وهمي.
+                    مع هبة الشريف، تتحول الأسئلة الداخلية إلى خطوات أهدأ: جلسات فردية، مسارات تعلم، وقراءة واعية تحترم مرحلتك وحدودك.
                   </p>
                   <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row lg:justify-start">
                     <PremiumButton href="/start-here" size="lg" className="mobile-full-cta">ابدئي من هنا</PremiumButton>
                     <PremiumButton href="/booking" size="lg" variant="outline" className="mobile-full-cta">احجزي جلسة</PremiumButton>
                   </div>
 
-                  <div className="mt-10 grid gap-3 rounded-[1.75rem] border border-sand bg-ivory/80 p-3 shadow-soft backdrop-blur md:grid-cols-4 dark:bg-deep-teal/50">
+                  <div className="mt-10 grid gap-3 rounded-[1.75rem] border border-sand bg-ivory/80 p-3 shadow-soft backdrop-blur md:grid-cols-4 dark:bg-deep-teal/60">
                     {trustStats.map((stat) => (
                       <div key={stat.label} className="border-sand px-4 py-3 text-center md:border-l last:md:border-l-0">
-                        <strong className="latin-numerals block text-2xl font-black text-petrol">{stat.value}</strong>
+                        <strong className="latin-numerals block text-2xl font-black text-petrol dark:text-gold">{stat.value}</strong>
                         <span className="mt-1 block text-xs font-bold leading-5 text-warm-gray">{stat.label}</span>
                       </div>
                     ))}
@@ -128,22 +128,22 @@ export default function HomePage() {
         </section>
 
         <section className="container-wide grid gap-4 px-2 pb-5 sm:px-0 lg:grid-cols-[1fr_1fr_1fr]">
-          <HomePanel title="الكورسات" href="/courses" action="عرض الكورسات">
+          <HomePanel title="المسارات" href="/courses" action="استكشفي المسارات">
             <PremiumEmptyState
               icon="✦"
-              title="كورسات حقيقية فقط"
-              description="لن تظهر أي كورسات تجريبية هنا. عند نشر كورس من لوحة الإدارة سيظهر تلقائيًا للزائرات."
-              actionLabel="تصفحي الكورسات"
+              title="قريبًا: مسارات وعي جديدة"
+              description="نجهّز رحلات تعليمية هادئة تساعدك على الفهم والتطبيق بخطوات واضحة. يمكنكِ ترك اهتمامك ليصلكِ الإطلاق أولًا."
+              actionLabel="انضمي لقائمة الاهتمام"
               actionHref="/courses"
             />
           </HomePanel>
 
-          <HomePanel title="الكتب" href="/books" action="عرض الكتب">
+          <HomePanel title="المكتبة" href="/books" action="زيارة المكتبة">
             <PremiumEmptyState
               icon="❋"
-              title="كتب بدون عناوين وهمية"
-              description="المكتبة تعرض الكتب المنشورة فقط. غلاف الكتاب وسعره يظهران بعد إضافتهما من الإدارة."
-              actionLabel="شاهدي المكتبة"
+              title="مكتبة هبة قيد التحضير"
+              description="إصدارات رقمية مختارة بعناية للقراءة والتأمل ستتوفر بتجربة هادئة ومنظمة."
+              actionLabel="أخبريني عند الإطلاق"
               actionHref="/books"
             />
           </HomePanel>
@@ -153,14 +153,14 @@ export default function HomePage() {
               <ImageSlot
                 variant="session"
                 ratio="free"
-                label="مساحة الجلسات"
-                hint="صورة رسمية أو مساحة جلسة حقيقية تضاف لاحقًا."
+                label="جلسة هادئة"
+                hint="مساحة بصرية من هوية الجلسات"
                 className="min-h-[250px] rounded-[1.75rem]"
                 showLabel={false}
               />
-              <div className="rounded-[1.75rem] border border-sand bg-cream/70 p-6 dark:bg-deep-teal/35">
+              <div className="rounded-[1.75rem] border border-sand bg-cream/70 p-6 dark:bg-deep-teal/45">
                 <p className="mini-label">جلسات فردية</p>
-                <h3 className="mt-4 text-2xl font-black text-charcoal dark:text-ivory">جلسة خاصة 1:1 مع هبة الشريف</h3>
+                <h3 className="mt-4 text-2xl font-black text-charcoal">جلسة خاصة 1:1 مع هبة الشريف</h3>
                 <p className="mt-4 text-sm leading-8 text-warm-gray">مساحة آمنة لفهم سؤال محدد، علاقة مرهقة، أو قرار يحتاج وعيًا وهدوءًا.</p>
                 <ul className="mt-5 space-y-2 text-sm font-bold text-warm-gray">
                   <li>✓ اختيار موعد واضح بدون تكرار</li>
@@ -184,9 +184,9 @@ export default function HomePage() {
             <div className="grid gap-5 md:grid-cols-3">
               {pathCards.map((path, index) => (
                 <MotionReveal key={path.title} delay={index * 0.06}>
-                  <Link href={path.href} className="group block h-full rounded-[2rem] border border-sand bg-ivory/90 p-6 shadow-soft transition duration-300 hover:-translate-y-1 hover:border-gold/40 hover:shadow-premium dark:bg-deep-teal/48">
-                    <span className="flex h-14 w-14 items-center justify-center rounded-full border border-gold/25 bg-gold/10 text-2xl text-petrol">{path.icon}</span>
-                    <h3 className="mt-6 text-2xl font-black text-charcoal transition group-hover:text-petrol dark:text-ivory">{path.title}</h3>
+                  <Link href={path.href} className="group block h-full rounded-[2rem] border border-sand bg-ivory/90 p-6 shadow-soft transition duration-300 hover:-translate-y-1 hover:border-gold/40 hover:shadow-premium dark:bg-deep-teal/55">
+                    <span className="flex h-14 w-14 items-center justify-center rounded-full border border-gold/25 bg-gold/10 text-2xl text-petrol dark:text-gold">{path.icon}</span>
+                    <h3 className="mt-6 text-2xl font-black text-charcoal transition group-hover:text-petrol">{path.title}</h3>
                     <p className="mt-3 text-sm leading-8 text-warm-gray">{path.text}</p>
                     <span className="mt-6 inline-flex rounded-full bg-petrol px-5 py-2 text-xs font-black text-ivory transition group-hover:bg-gold group-hover:text-deep-teal">{path.cta}</span>
                   </Link>
@@ -196,15 +196,15 @@ export default function HomePage() {
           </PremiumSection>
         </section>
 
-        <section className="brand-quiet-divider border-y border-sand bg-ivory/58 dark:bg-deep-teal/20">
+        <section className="brand-quiet-divider border-y border-sand bg-ivory/58 dark:bg-deep-teal/30">
           <div className="container-premium grid gap-10 py-16 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
             <MotionReveal>
               <div className="luxury-shell rounded-[2.5rem] p-6">
                 <ImageSlot
                   variant="portrait"
                   ratio="portrait"
-                  label="الصورة الرسمية لهبة الشريف"
-                  hint="توضع هنا صورة شخصية احترافية عند توفرها."
+                  label="هبة الشريف"
+                  hint="هوية بصرية هادئة"
                   className="mx-auto max-w-sm"
                 />
               </div>
@@ -212,7 +212,7 @@ export default function HomePage() {
 
             <MotionReveal delay={0.08}>
               <p className="mini-label">مرحبًا، أنا هبة الشريف</p>
-              <h2 className="mt-5 text-balance text-4xl font-black leading-tight text-charcoal md:text-6xl dark:text-ivory">مدربة حياة وكاتبة ترافقك نحو وعي أعمق بذاتك.</h2>
+              <h2 className="mt-5 text-balance text-4xl font-black leading-tight text-charcoal md:text-6xl">مدربة حياة وكاتبة ترافقك نحو وعي أعمق بذاتك.</h2>
               <p className="mt-6 max-w-2xl text-base leading-10 text-warm-gray">
                 أؤمن أن التغيير الحقيقي لا يبدأ بالضغط على النفس، بل بفهمها. هنا تجدين لغة هادئة، أدوات عملية، ومسارات تراعي إنسانيتك وخصوصيتك.
               </p>
@@ -238,7 +238,7 @@ export default function HomePage() {
                   <div className="brand-rich-card h-full rounded-[2rem] p-6">
                     <span className="latin-numerals text-xs font-black text-gold">0{index + 1}</span>
                     <p className="mt-5 text-sm font-black text-warm-gray">من: {item.from}</p>
-                    <p className="mt-3 text-xl font-black leading-8 text-petrol">إلى: {item.to}</p>
+                    <p className="mt-3 text-xl font-black leading-8 text-petrol dark:text-gold">إلى: {item.to}</p>
                   </div>
                 </MotionReveal>
               ))}
@@ -250,25 +250,25 @@ export default function HomePage() {
           <PremiumAssessment />
         </section>
 
-        <section className="brand-quiet-divider border-y border-sand bg-ivory/58 dark:bg-deep-teal/20">
+        <section className="brand-quiet-divider border-y border-sand bg-ivory/58 dark:bg-deep-teal/30">
           <div className="container-premium grid gap-6 py-16 lg:grid-cols-[1fr_0.85fr]">
             <div className="brand-rich-card rounded-[2.4rem] p-7">
-              <p className="mini-label">التقييمات والقصص</p>
-              <div className="mt-6 rounded-[2rem] border border-sand bg-cream/70 p-7 dark:bg-deep-teal/35">
+              <p className="mini-label">قصص وتجارب</p>
+              <div className="mt-6 rounded-[2rem] border border-sand bg-cream/70 p-7 dark:bg-deep-teal/45">
                 <BrandOrnament className="mb-5" />
-                <h2 className="text-2xl font-black text-charcoal dark:text-ivory">لا نعرض قصصًا وهمية.</h2>
+                <h2 className="text-2xl font-black text-charcoal">تجارب حقيقية عند توفرها.</h2>
                 <p className="mt-4 text-sm leading-8 text-warm-gray">
-                  ستظهر هنا مراجعات حقيقية فقط بعد إرسالها ومراجعتها من لوحة الإدارة، بدون أسماء مخترعة أو تقييمات افتراضية.
+                  عندما تُشارك عميلة تجربتها بإذن واضح، ستظهر هنا كقصة موثوقة تساعد غيرها على فهم الطريق قبل البدء.
                 </p>
               </div>
-              <PremiumButton href="/booking" variant="outline" className="mt-5">ابدئي بتجربة حقيقية</PremiumButton>
+              <PremiumButton href="/booking" variant="outline" className="mt-5">ابدئي بتجربة خاصة</PremiumButton>
             </div>
 
             <div className="grid gap-4">
-              {communityNotes.map((note) => (
-                <div key={note} className="rounded-[2rem] border border-sand bg-ivory/88 p-6 shadow-soft dark:bg-deep-teal/48">
+              {promiseNotes.map((note) => (
+                <div key={note} className="rounded-[2rem] border border-sand bg-ivory/88 p-6 shadow-soft dark:bg-deep-teal/55">
                   <BrandDivider className="mb-4 justify-start" />
-                  <p className="text-sm font-black leading-8 text-charcoal dark:text-ivory">{note}</p>
+                  <p className="text-sm font-black leading-8 text-charcoal">{note}</p>
                 </div>
               ))}
             </div>
@@ -285,11 +285,11 @@ export default function HomePage() {
 
         <section className="container-wide px-2 pb-8 sm:px-0">
           <div className="premium-glow-border relative overflow-hidden rounded-[2.5rem] border border-sand bg-petrol p-8 text-center text-ivory shadow-premium md:p-12">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgb(255_255_255/.14),transparent_52%),radial-gradient(circle_at_10%_80%,rgb(var(--color-gold)/.18),transparent_20rem)]" />
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgb(245_240_231/.14),transparent_52%),radial-gradient(circle_at_10%_80%,rgb(var(--color-gold)/.18),transparent_20rem)]" />
             <div className="relative mx-auto max-w-4xl">
               <BrandOrnament className="mx-auto mb-5 text-gold" />
               <h2 className="text-3xl font-black leading-tight md:text-5xl">جاهزة لبدء رحلة أوضح؟</h2>
-              <p className="mx-auto mt-5 max-w-2xl text-sm leading-8 text-ivory/78">ابدئي بخطوة صغيرة: دليل البداية، جلسة خاصة، أو متابعة الكورسات والكتب عند نشرها.</p>
+              <p className="mx-auto mt-5 max-w-2xl text-sm leading-8 text-ivory/78">ابدئي بخطوة صغيرة: دليل البداية، جلسة خاصة، أو متابعة المسارات والكتب عند نشرها.</p>
               <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
                 <PremiumButton href="/start-here" variant="gold">ابدئي من هنا</PremiumButton>
                 <PremiumButton href="/booking" variant="outline" className="border-ivory text-ivory hover:bg-ivory hover:text-petrol">احجزي جلستك الخاصة</PremiumButton>
@@ -306,9 +306,9 @@ export default function HomePage() {
 
 function HomePanel({ title, href, action, children }: { title: string; href: string; action: string; children: React.ReactNode }) {
   return (
-    <section className="rounded-[2rem] border border-sand bg-ivory/86 p-4 shadow-soft backdrop-blur-sm dark:bg-deep-teal/48">
+    <section className="rounded-[2rem] border border-sand bg-ivory/86 p-4 shadow-soft backdrop-blur-sm dark:bg-deep-teal/55">
       <div className="mb-4 flex items-center justify-between gap-4">
-        <h2 className="text-xl font-black text-charcoal dark:text-ivory">{title}</h2>
+        <h2 className="text-xl font-black text-charcoal">{title}</h2>
         <Link href={href} className="text-xs font-black text-burgundy transition hover:text-petrol">{action} ←</Link>
       </div>
       {children}
@@ -318,8 +318,8 @@ function HomePanel({ title, href, action, children }: { title: string; href: str
 
 function IdentityPill({ title, text }: { title: string; text: string }) {
   return (
-    <div className="rounded-[1.5rem] border border-sand bg-ivory/80 p-4 shadow-soft dark:bg-deep-teal/40">
-      <h3 className="text-sm font-black text-petrol">{title}</h3>
+    <div className="rounded-[1.5rem] border border-sand bg-ivory/80 p-4 shadow-soft dark:bg-deep-teal/45">
+      <h3 className="text-sm font-black text-petrol dark:text-gold">{title}</h3>
       <p className="mt-2 text-xs font-bold leading-6 text-warm-gray">{text}</p>
     </div>
   )

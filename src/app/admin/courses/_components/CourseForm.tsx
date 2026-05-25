@@ -162,7 +162,7 @@ export default function CourseForm({ initialValues, submitLabel, loading = false
       })
     } catch (submitError) {
       console.error('Course form submit error:', submitError)
-      setError('حدث خطأ أثناء حفظ الكورس. تأكد من البيانات وحاول مرة أخرى.')
+      setError('لم يتم حفظ الكورس الآن. راجعي البيانات وحاولي مرة أخرى.')
     } finally {
       setSubmitting(false)
     }

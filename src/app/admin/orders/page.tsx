@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic'
 import { useEffect, useMemo, useState } from 'react'
 import {
+  addDoc,
   collection,
   doc,
   getDoc,
@@ -33,9 +34,12 @@ interface AdminOrder extends Order {
 
 const statusOptions: { label: string; value: 'all' | OrderStatus }[] = [
   { label: 'كل الطلبات', value: 'all' },
-  { label: 'بانتظار التأكيد', value: 'pending' },
-  { label: 'بيانات دفع مرسلة', value: 'payment_submitted' },
-  { label: 'مدفوع', value: 'paid' },
+  { label: 'بانتظار المراجعة', value: 'pending' },
+  { label: 'بانتظار إثبات الدفع', value: 'awaiting_payment' },
+  { label: 'إثبات الدفع قيد المراجعة', value: 'payment_submitted' },
+  { label: 'تم تأكيد الدفع', value: 'paid' },
+  { label: 'الوصول مفتوح', value: 'access_granted' },
+  { label: 'يحتاج مراجعة', value: 'rejected' },
   { label: 'فشل الدفع', value: 'failed' },
   { label: 'مسترد', value: 'refunded' },
   { label: 'ملغي', value: 'cancelled' },
@@ -116,9 +120,9 @@ export default function AdminOrdersPage() {
   }, [activeStatus, orders, search])
 
   const stats = useMemo(() => {
-    const paid = orders.filter((order) => order.status === 'paid')
+    const paid = orders.filter((order) => order.status === 'paid' || order.status === 'access_granted')
     const submitted = orders.filter((order) => order.status === 'payment_submitted')
-    const pending = orders.filter((order) => order.status === 'pending')
+    const pending = orders.filter((order) => order.status === 'pending' || order.status === 'awaiting_payment')
 
     return {
       revenue: paid.reduce((sum, order) => sum + Number(order.amount || 0), 0),
@@ -134,7 +138,16 @@ export default function AdminOrdersPage() {
     try {
       await updateDoc(doc(db, 'orders', orderId), {
         status,
+        paymentStatus: status === 'paid' || status === 'access_granted' ? 'confirmed' : status === 'rejected' ? 'rejected' : status === 'payment_submitted' ? 'submitted' : 'pending',
         updatedAt: serverTimestamp(),
+      })
+
+      await addDoc(collection(db, 'admin_logs'), {
+        action: 'order_status_updated',
+        targetType: 'order',
+        targetId: orderId,
+        status,
+        createdAt: serverTimestamp(),
       })
 
       setOrders((current) =>
@@ -294,10 +307,21 @@ export default function AdminOrdersPage() {
                       type="button"
                       size="sm"
                       className="w-full"
-                      disabled={updatingId === order.id || order.status === 'paid'}
+                      disabled={updatingId === order.id || order.status === 'paid' || order.status === 'access_granted'}
                       onClick={() => updateOrderStatus(order.id, 'paid')}
                     >
-                      تأكيد الدفع وفتح الوصول
+                      تأكيد الدفع
+                    </PremiumButton>
+
+                    <PremiumButton
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="w-full"
+                      disabled={updatingId === order.id || order.status === 'access_granted'}
+                      onClick={() => updateOrderStatus(order.id, 'access_granted')}
+                    >
+                      تأكيد فتح الوصول
                     </PremiumButton>
 
                     <PremiumButton
@@ -308,7 +332,7 @@ export default function AdminOrdersPage() {
                       disabled={updatingId === order.id || order.status === 'payment_submitted'}
                       onClick={() => updateOrderStatus(order.id, 'payment_submitted')}
                     >
-                      وضع بيانات دفع مرسلة
+                      إثبات الدفع قيد المراجعة
                     </PremiumButton>
 
                     <PremiumButton
@@ -316,10 +340,21 @@ export default function AdminOrdersPage() {
                       size="sm"
                       variant="outline"
                       className="w-full"
-                      disabled={updatingId === order.id || order.status === 'pending'}
-                      onClick={() => updateOrderStatus(order.id, 'pending')}
+                      disabled={updatingId === order.id || order.status === 'awaiting_payment'}
+                      onClick={() => updateOrderStatus(order.id, 'awaiting_payment')}
                     >
-                      إرجاع لانتظار التأكيد
+                      انتظار إثبات الدفع
+                    </PremiumButton>
+
+                    <PremiumButton
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="w-full"
+                      disabled={updatingId === order.id || order.status === 'rejected'}
+                      onClick={() => updateOrderStatus(order.id, 'rejected')}
+                    >
+                      يحتاج مراجعة من العميلة
                     </PremiumButton>
 
                     <PremiumButton
@@ -384,8 +419,11 @@ function getPaymentMethodLabel(method: string | undefined) {
 function isTimelineActive(status: string, step: string) {
   const rank: Record<string, number> = {
     pending: 1,
+    awaiting_payment: 1,
+    rejected: 1,
     payment_submitted: 2,
     paid: 3,
+    access_granted: 3,
     failed: 1,
     refunded: 3,
     cancelled: 1,

@@ -221,7 +221,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
-              <PremiumBadge variant="gold">V2 Premium</PremiumBadge>
+              <PremiumBadge variant="gold">V3.3 Launch</PremiumBadge>
               <PremiumButton href="/" variant="outline" size="sm">
                 عرض الموقع
               </PremiumButton>

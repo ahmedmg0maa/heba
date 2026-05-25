@@ -18,7 +18,7 @@ const customDescriptions: Record<string, string> = {
   media: 'إدارة أماكن الصور والملفات وروابط Drive.',
   navigation: 'تنظيم القوائم والروابط الأساسية.',
   seo: 'إعدادات Google وSEO وبيانات المشاركة.',
-  'feature-flags': 'تفعيل أو تعطيل المميزات التجريبية.',
+  'feature-flags': 'تفعيل أو تعطيل مميزات الإطلاق.',
   'ai-guide': 'إعدادات دليل البداية والأسئلة الجاهزة.',
   academy: 'قواعد بناء الكورسات والفصول والدروس.',
   uploads: 'إعدادات Google Drive وروابط المحتوى.',

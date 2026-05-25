@@ -87,7 +87,7 @@ export default function BookForm({ initialValues, submitLabel, loading = false, 
       })
     } catch (submitError) {
       console.error('Book form submit error:', submitError)
-      setError('حدث خطأ أثناء حفظ الكتاب. تأكد من البيانات وحاول مرة أخرى.')
+      setError('لم يتم حفظ الكتاب الآن. راجعي البيانات وحاولي مرة أخرى.')
     } finally {
       setSubmitting(false)
     }
@@ -99,7 +99,7 @@ export default function BookForm({ initialValues, submitLabel, loading = false, 
         <p className="mini-label">Book Builder</p>
         <h2 className="mt-3 text-2xl font-black text-charcoal">بيانات الكتاب</h2>
         <p className="mt-3 text-sm leading-8 text-warm-gray">
-          أضف بيانات الكتاب العامة ورابط Google Drive الداخلي. رابط فتح الكتاب النهائي يمكن ربطه من صفحة المحتوى المحمي.
+          أضيفي بيانات الكتاب العامة ورابط Google Drive الداخلي. رابط فتح الكتاب النهائي يمكن ربطه من صفحة المحتوى المحمي.
         </p>
       </div>
 

@@ -440,7 +440,7 @@ export default function BookingPage() {
       router.push(`/booking/confirmation?bookingId=${encodeURIComponent(data.bookingId || '')}`)
     } catch (submitError) {
       console.error('Booking submit error:', submitError)
-      setError('حدث خطأ أثناء إرسال طلب الحجز. حاولي مرة أخرى.')
+      setError('لم نتمكن من إرسال طلب الحجز الآن. حاولي مرة أخرى.')
     } finally {
       setSubmitting(false)
     }
@@ -571,7 +571,7 @@ export default function BookingPage() {
                       </span>
                       <h3 className="text-2xl font-black text-charcoal">باقة 3 جلسات</h3>
                       <p className="mt-4 text-sm leading-7 text-warm-gray">
-                        رحلة متابعة أعمق لمن تريد خطة ممتدة. يمكن تفعيلها لاحقًا من إعدادات الجلسات.
+                        رحلة متابعة أعمق لمن تريد خطة ممتدة، ويتم تفعيلها من إعدادات الجلسات عند اعتمادها.
                       </p>
                     </div>
                   </div>
@@ -794,7 +794,7 @@ export default function BookingPage() {
                 ratio="portrait"
                 variant="session"
                 label="صورة مساحة الجلسة"
-                hint="يمكن إضافة صورة حقيقية لهبة أو مساحة الجلسة لاحقًا."
+                hint="تكوين بصري هادئ من هوية الجلسات."
                 className="min-h-[420px]"
               />
 

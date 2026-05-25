@@ -49,7 +49,7 @@ export default function BookDetailsPage() {
         setBook(bookData)
       } catch (loadError) {
         console.error('Book details error:', loadError)
-        setError('تعذر تحميل بيانات الكتاب الآن. حاولي مرة أخرى لاحقًا.')
+        setError('')
       } finally {
         setLoading(false)
       }
@@ -93,8 +93,8 @@ export default function BookDetailsPage() {
           <section className="container-premium py-12">
             <PremiumEmptyState
               icon="!"
-              title="حدث خطأ"
-              description={error}
+              title="قريبًا"
+              description="هذا الإصدار غير متاح للعرض الآن. يمكنكِ زيارة المكتبة أو قراءة المقالات لحين فتح الإصدارات."
               actionLabel="العودة للكتب"
               actionHref="/books"
             />
@@ -149,7 +149,7 @@ export default function BookDetailsPage() {
                       </span>
                     ) : null}
                     <span className="rounded-full border border-gold/20 bg-gold/10 px-5 py-2 text-sm font-bold text-gold">
-                      {formatEGP(book.price)}
+                      {Number(book.price) > 0 ? formatEGP(book.price) : 'يُعلن قريبًا'}
                     </span>
                   </div>
                 </div>
@@ -262,7 +262,7 @@ export default function BookDetailsPage() {
               <aside className="h-fit rounded-[2rem] border border-sand bg-ivory/92 p-6 shadow-premium backdrop-blur-sm lg:sticky lg:top-28">
                 <p className="text-sm font-bold text-gold">سعر الكتاب</p>
 
-                <strong className="mt-3 block text-4xl font-black text-petrol">{formatEGP(book.price)}</strong>
+                <strong className="mt-3 block text-4xl font-black text-petrol">{Number(book.price) > 0 ? formatEGP(book.price) : 'يُعلن قريبًا'}</strong>
 
                 <p className="mt-4 text-sm leading-7 text-warm-gray">
                   بعد إرسال طلب الشراء، ستظهر حالته داخل لوحة المستخدم. عند تأكيد الدفع من الإدارة يتم فتح الكتاب تلقائيًا.

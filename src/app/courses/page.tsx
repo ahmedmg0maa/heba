@@ -66,7 +66,8 @@ export default function CoursesPage() {
         setCourses(publishedCourses)
       } catch (loadError) {
         console.error('Courses page error:', loadError)
-        setError('تعذر تحميل الكورسات الآن. حاولي مرة أخرى لاحقًا.')
+        setCourses([])
+        setError('')
       } finally {
         setLoading(false)
       }
@@ -134,8 +135,8 @@ export default function CoursesPage() {
 
               <div className="mt-9 grid max-w-3xl gap-3 sm:grid-cols-3">
                 <HeroMetric value="محمي" label="يفتح المحتوى بعد تأكيد الطلب" />
-                <HeroMetric value="EGP" label="كل الأسعار بالجنيه المصري" />
-                <HeroMetric value="بدون وهميات" label="لا تظهر إلا الكورسات المنشورة" />
+                <HeroMetric value="متدرج" label="تعلم على مهل وبخطوات واضحة" />
+                <HeroMetric value="خاص" label="مسار يناسب مرحلتك الحالية" />
               </div>
             </div>
 
@@ -229,16 +230,16 @@ export default function CoursesPage() {
               ) : null}
 
               {!loading && error ? (
-                <PremiumEmptyState icon="!" title="حدث خطأ" description={error} actionLabel="العودة للرئيسية" actionHref="/" />
+                <PremiumEmptyState icon="✦" title="قريبًا" description="نجهّز مسارات تعليمية مختارة بعناية. يمكنكِ البدء من جلسة خاصة أو دليل البداية لحين فتح المسارات." actionLabel="ابدئي من هنا" actionHref="/start-here" />
               ) : null}
 
               {!loading && !error && courses.length === 0 ? (
                 <PremiumEmptyState
                   icon="✦"
-                  title="الكورسات قيد الإعداد"
-                  description="يتم إعداد مسارات تعليمية جديدة بعناية. عودي قريبًا لتجربة أكثر اكتمالًا."
-                  actionLabel="احجزي جلسة خاصة"
-                  actionHref="/booking"
+                  title="قريبًا: مسارات وعي جديدة"
+                  description="نجهّز رحلات تعليمية هادئة تساعدك على الفهم والتطبيق بخطوات واضحة. ابدئي الآن بدليل البداية أو جلسة خاصة لحين فتح المسارات."
+                  actionLabel="ابدئي من هنا"
+                  actionHref="/start-here"
                 />
               ) : null}
 
@@ -292,7 +293,7 @@ export default function CoursesPage() {
                   ratio="square"
                   variant="brand"
                   label="مساحة صورة ملهمة"
-                  hint="يمكن إضافة صورة من جلسة أو هوية هبة لاحقًا."
+                  hint="تكوين بصري من هوية هبة الشريف."
                   className="rounded-none border-0 shadow-none"
                 />
                 <div className="p-6">
@@ -334,12 +335,12 @@ function FeaturedCourse({ course }: { course: Course }) {
           alt={course.title}
           ratio="video"
           variant="course"
-          label="صورة الكورس المميز"
+          label="صورة مسار مقترح"
           hint="غلاف كبير للمسار التعليمي."
         />
 
         <div className="p-2 lg:p-6">
-          <PremiumBadge variant="gold">الكورس المميز</PremiumBadge>
+          <PremiumBadge variant="gold">مسار مقترح</PremiumBadge>
           <h2 className="mt-5 text-3xl font-black leading-tight text-charcoal md:text-4xl dark:text-ivory">
             {course.title}
           </h2>
@@ -358,7 +359,7 @@ function FeaturedCourse({ course }: { course: Course }) {
             <Link href={`/courses/${course.slug}`} className="text-sm font-black text-burgundy hover:text-petrol">
               عرض المنهج والتفاصيل ←
             </Link>
-            <span className="sm:mr-auto text-xl font-black text-petrol">{formatEGP(course.price)}</span>
+            {Number(course.price) > 0 ? <span className="sm:mr-auto text-xl font-black text-petrol">{formatEGP(course.price)}</span> : null}
           </div>
         </div>
       </div>

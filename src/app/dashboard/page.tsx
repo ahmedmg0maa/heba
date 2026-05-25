@@ -197,7 +197,7 @@ export default function DashboardHomePage() {
           </div>
 
           <aside className="grid gap-4 rounded-[2.25rem] border border-sand bg-cream/72 p-5 shadow-soft backdrop-blur-sm">
-            <ImageSlot ratio="square" variant="brand" label="صورة رحلة المستخدم" hint="مساحة فاخرة لصورة حقيقية أو رسم بصري لهبة لاحقًا." showLabel />
+            <ImageSlot ratio="square" variant="brand" label="صورة رحلة المستخدم" hint="تكوين بصري هادئ من هوية الرحلة." showLabel />
             <div className="rounded-[1.7rem] border border-sand bg-ivory/74 p-5">
               <p className="text-xs font-black text-warm-gray">توصية اليوم</p>
               <h3 className="mt-2 text-xl font-black text-charcoal">ابدئي بخطوة واحدة فقط</h3>

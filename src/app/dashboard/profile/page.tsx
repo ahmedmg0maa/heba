@@ -71,10 +71,10 @@ export default function DashboardProfilePage() {
             <p className="mini-label mb-3">ملفي الشخصي</p>
             <h2 className="text-4xl font-black leading-tight text-petrol md:text-5xl">تخصيص رحلتك مع هبة</h2>
             <p className="mt-4 max-w-2xl text-sm leading-8 text-warm-gray">
-              بياناتك تساعد المنصة على اقتراح المسار الأقرب لكِ لاحقًا: كورس، كتاب، أو جلسة خاصة.
+              بياناتك تساعد المنصة على اقتراح المسار الأقرب لكِ: كورس، كتاب، أو جلسة خاصة.
             </p>
           </div>
-          <ImageSlot ratio="square" variant="portrait" label="صورة شخصية اختيارية" hint="يمكن إضافة صورة رمزية لاحقًا." />
+          <ImageSlot ratio="square" variant="portrait" label="صورة شخصية اختيارية" hint="رمز هادئ للملف الشخصي." />
         </div>
       </section>
 

@@ -11,7 +11,7 @@ import { useAuth } from '@/hooks/useAuth'
 
 function getArabicFirebaseError(error: unknown) {
   if (!(error instanceof FirebaseError)) {
-    return 'حدث خطأ غير متوقع. حاولي مرة أخرى.'
+    return 'لم تكتمل العملية الآن. حاولي مرة أخرى.'
   }
 
   const messages: Record<string, string> = {

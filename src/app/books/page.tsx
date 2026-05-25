@@ -41,7 +41,8 @@ export default function BooksPage() {
         setBooks(publishedBooks)
       } catch (loadError) {
         console.error('Books page error:', loadError)
-        setError('تعذر تحميل الكتب الآن. حاولي مرة أخرى لاحقًا.')
+        setBooks([])
+        setError('')
       } finally {
         setLoading(false)
       }
@@ -125,7 +126,7 @@ export default function BooksPage() {
                 ratio="book"
                 variant="book"
                 label="غلاف كتاب مميز"
-                hint="سيظهر هنا غلاف الكتاب المختار عند إضافته من لوحة الإدارة."
+                hint="تكوين بصري من هوية المكتبة"
                 className="mx-auto max-w-[340px]"
                 priority
               />
@@ -171,16 +172,16 @@ export default function BooksPage() {
           ) : null}
 
           {!loading && error ? (
-            <PremiumEmptyState icon="!" title="حدث خطأ" description={error} actionLabel="العودة للرئيسية" actionHref="/" />
+            <PremiumEmptyState icon="❋" title="قريبًا" description="نجهّز إصدارات رقمية مختارة بعناية. يمكنكِ البدء من المقالات أو حجز جلسة ترشيح شخصية." actionLabel="اقرئي المقالات" actionHref="/articles" />
           ) : null}
 
           {!loading && !error && books.length === 0 ? (
             <PremiumEmptyState
               icon="📖"
-              title="كتب جديدة تُحضَّر بهدوء"
-              description="سيتم فتح هذا الباب قريبًا بمحتوى مختار بعناية."
-              actionLabel="احجزي جلسة خاصة"
-              actionHref="/booking"
+              title="مكتبة هبة قيد التحضير"
+              description="إصدارات رقمية مختارة بعناية للقراءة والتأمل ستتوفر بتجربة هادئة ومنظمة."
+              actionLabel="اقرئي المقالات"
+              actionHref="/articles"
             />
           ) : null}
 
@@ -190,7 +191,7 @@ export default function BooksPage() {
                 <p className="text-sm font-bold text-warm-gray">تم العثور على {filteredBooks.length} كتاب مناسب.</p>
                 <div className="flex flex-wrap gap-2">
                   <PremiumBadge variant="gold">وصول محمي</PremiumBadge>
-                  <PremiumBadge variant="olive">كتب منشورة فقط</PremiumBadge>
+                  <PremiumBadge variant="olive">قراءة هادئة</PremiumBadge>
                 </div>
               </div>
 
@@ -216,7 +217,7 @@ export default function BooksPage() {
                 <p className="mini-label mb-3 text-gold">لا تعرفين من أين تبدأين؟</p>
                 <h2 className="text-3xl font-black md:text-4xl">اختاري الكتاب حسب المرحلة، لا حسب العنوان فقط.</h2>
                 <p className="mt-4 max-w-2xl text-sm leading-8 text-cream/75">
-                  لو كنتِ بين أكثر من كتاب، ابدئي بجلسة قصيرة أو استخدمي دليل البداية داخل الصفحة لتحديد المسار الأقرب لكِ.
+                  لو كنتِ بين أكثر من اتجاه، ابدئي بجلسة قصيرة أو استخدمي دليل البداية لتحديد المسار الأقرب لكِ.
                 </p>
               </div>
               <PremiumButton href="/booking" variant="gold" className="w-full">احجزي جلسة ترشيح</PremiumButton>

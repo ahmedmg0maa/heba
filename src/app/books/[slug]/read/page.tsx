@@ -100,7 +100,7 @@ export default function BookReadPage() {
         setResourceUrl(accessData.resourceUrl || '')
       } catch (loadError) {
         console.error('Book read load error:', loadError)
-        setError('تعذر تحميل محتوى الكتاب الآن.')
+        setError('المحتوى غير متاح الآن. راجعي حالة الطلب من لوحة حسابك أو تواصلي معنا.')
       } finally {
         setLoading(false)
       }
