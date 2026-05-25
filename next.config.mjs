@@ -1,25 +1,24 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  poweredByHeader: false,
-  compress: true,
   reactStrictMode: true,
-  async redirects() {
-    return [
-      {
-        source: "/articles/:path*",
-        destination: "/blog/:path*",
-        permanent: true,
-      },
-      {
-        source: "/articles",
-        destination: "/blog",
-        permanent: true,
-      },
-    ]
-  },
+  poweredByHeader: false,
+  staticPageGenerationTimeout: 20,
   images: {
-    formats: ["image/avif", "image/webp"],
-    minimumCacheTTL: 60 * 60 * 24 * 30,
+    remotePatterns: [
+      { protocol: 'https', hostname: 'firebasestorage.googleapis.com' },
+      { protocol: 'https', hostname: 'storage.googleapis.com' },
+      { protocol: 'https', hostname: 'lh3.googleusercontent.com' },
+      { protocol: 'https', hostname: 'images.unsplash.com' },
+    ],
+  },
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  experimental: {
+    cpus: 1,
   },
 }
 

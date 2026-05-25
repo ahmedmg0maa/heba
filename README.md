@@ -1,56 +1,28 @@
-# Heba El Sharif Website
+# Heba ElSherif — Global Premium Platform
 
-Production-ready Next.js website with real Firebase-backed flows for:
-- Account
-- Bookings
-- Checkout / Orders
-- Admin dashboard
-- Books and Courses catalogs
+Arabic-first premium emotional learning and coaching platform.
 
-## Run Locally
+## Stack
 
-```bash
-npm install
-npm run dev
-```
+- Next.js App Router
+- TypeScript
+- Tailwind CSS
+- Firebase Auth
+- Firestore
+- Firebase Admin SDK
+- Vercel-ready
 
-Open `http://localhost:3000`.
+## Features
 
-## Production Build
+- Public premium website
+- Dark mode
+- Guided AI-style assistant
+- Courses/books/booking
+- Protected content access
+- Dashboard
+- Admin panel
+- Reviews
+- Payment workflow
+- SEO/legal/articles
 
-```bash
-npm run build
-npm run start
-```
-
-## Environment Variables
-
-Copy `.env.example` to `.env.local` and fill values.
-
-Required:
-- `NEXT_PUBLIC_FIREBASE_*` public web config
-- `FIREBASE_SERVICE_ACCOUNT_JSON` (server admin sdk)
-- `ADMIN_PASSWORD` (admin dashboard login)
-
-Optional:
-- `FIREBASE_STORAGE_BUCKET`
-- `NEXT_PUBLIC_SITE_URL`
-
-## Security Rules
-
-Prepared baseline rules files:
-- `firestore.rules`
-- `storage.rules`
-
-These should be reviewed and deployed before go-live.
-
-## Notification Prep
-
-Prepared notification abstraction:
-- `lib/notifications.ts`
-- `docs/notifications-todo.md`
-
-Current flow queues placeholder events for:
-- booking approved
-- order paid
-- account activation (planned trigger)
+See `PROJECT_SETUP.md` for setup and deployment.
