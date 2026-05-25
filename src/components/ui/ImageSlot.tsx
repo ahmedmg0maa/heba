@@ -36,29 +36,19 @@ const variantClasses: Record<SlotVariant, string> = {
   soft: 'from-sand/70 via-ivory to-cream',
 }
 
-const temporaryVariantImages: Record<SlotVariant, string> = {
-  hero: '/images/heba/heba-hero.jpg',
-  portrait: '/images/heba/heba-about.jpg',
-  session: '/images/heba/heba-session.jpg',
-  course: '/images/courses/course-default.jpg',
-  book: '/images/books/book-default.jpg',
-  brand: '/images/brand/brand-background.jpg',
-  soft: '/images/brand/brand-pattern.jpg',
-}
-
 export default function ImageSlot({
   src,
   fallbackSrc = '',
   alt = 'Heba ElSherif visual space',
   ratio = 'video',
   label = 'مساحة الصورة',
-  hint = 'جاهزة لإضافة الصورة الحقيقية لاحقًا.',
+  hint = 'جاهزة لإضافة الأصل البصري الحقيقي لاحقًا.',
   className = '',
   priority = false,
   variant = 'soft',
   showLabel = true,
 }: ImageSlotProps) {
-  const imageSrc = src?.trim() || fallbackSrc.trim() || temporaryVariantImages[variant]
+  const imageSrc = src?.trim() || fallbackSrc.trim()
 
   return (
     <div
@@ -78,27 +68,21 @@ export default function ImageSlot({
           <span className="sr-only">{label}. {hint}</span>
           <div className="absolute -right-16 top-8 h-56 w-56 rounded-full bg-gold/20 blur-3xl" />
           <div className="absolute -left-16 bottom-8 h-60 w-60 rounded-full bg-petrol/14 blur-3xl" />
-          <div className="absolute inset-x-8 bottom-8 top-8 rounded-[2rem] border border-white/45 bg-white/16 backdrop-blur-[1px]" />
+          <div className="absolute inset-x-8 bottom-8 top-8 rounded-[2rem] border border-white/45 bg-white/16 backdrop-blur-[1px] dark:border-gold/10 dark:bg-deep-teal/20" />
           <div className="ornamental-corner ornamental-corner-top" />
           <div className="ornamental-corner ornamental-corner-bottom" />
           <div className="absolute left-8 top-8 h-24 w-24 rounded-full border border-gold/30" />
           <div className="absolute bottom-10 right-10 h-32 w-24 rounded-full border border-petrol/20" />
           <div className="absolute inset-0 bg-[linear-gradient(135deg,transparent,rgba(255,255,255,.28),transparent)]" />
 
-          {showLabel ? (
-            <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-6 text-center">
-              <div className="mb-5 rounded-[1.5rem] border border-gold/20 bg-ivory/58 p-5 text-petrol shadow-soft backdrop-blur-sm">
-                <svg viewBox="0 0 64 64" fill="none" aria-hidden="true" className="mx-auto h-14 w-14">
-                  <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.2" d="M14 44 27 31l9 9 6-6 8 10" />
-                  <rect width="42" height="34" x="11" y="15" rx="7" stroke="currentColor" strokeWidth="2.2" />
-                  <circle cx="40" cy="25" r="4" stroke="currentColor" strokeWidth="2.2" />
-                </svg>
-              </div>
-              <BrandOrnament className="mb-3 scale-75" />
-              <p className="text-lg font-black text-petrol">{label}</p>
-              <p className="mt-2 max-w-xs text-xs font-bold leading-6 text-warm-gray">{hint}</p>
+          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center px-6 text-center">
+            <div className="relative mb-5 h-24 w-32 overflow-hidden rounded-[1.75rem] border border-gold/25 bg-ivory/72 p-2 text-petrol shadow-soft backdrop-blur-sm dark:bg-cream/90">
+              <Image src="/images/brand/logo-symbol.png" alt="" fill className="object-contain p-2" sizes="128px" />
             </div>
-          ) : null}
+            <BrandOrnament className="mb-3 scale-75" />
+            {showLabel ? <p className="text-lg font-black text-petrol">{label}</p> : null}
+            {showLabel ? <p className="mt-2 max-w-xs text-xs font-bold leading-6 text-warm-gray">{hint}</p> : null}
+          </div>
         </div>
       )}
     </div>

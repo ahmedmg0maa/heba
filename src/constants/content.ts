@@ -110,36 +110,20 @@ export const ARTICLES = [
   },
 ]
 
-export const TESTIMONIALS = [
-  {
-    name: 'مشاركة في جلسة فردية',
-    role: 'جلسة وضوح',
-    content: 'خرجت من الجلسة وأنا أعرف السؤال الحقيقي الذي كنت أهرب منه. الهدوء والوضوح كانا أهم من أي نصيحة مباشرة.',
-  },
-  {
-    name: 'قارئة كتاب رقمي',
-    role: 'كتاب تأملي',
-    content: 'اللغة كانت قريبة وراقية. شعرت أنني أقرأ شيئًا لا يدفعني للتغيير بعنف، بل يفتح لي بابًا ألطف.',
-  },
-  {
-    name: 'طالبة كورس',
-    role: 'كورس وعي عاطفي',
-    content: 'تنظيم الدروس جعلني أعود للمحتوى بسهولة. كنت أحتاج رحلة واضحة لا مجرد فيديوهات متفرقة.',
-  },
-]
+export const TESTIMONIALS: { name: string; role: string; content: string }[] = []
 
 export const IMAGE_SLOTS = {
-  hero: '/images/heba/heba-hero.jpg',
-  about: '/images/heba/heba-about.jpg',
-  profile: '/images/heba/heba-profile.jpg',
-  session: '/images/heba/heba-session.jpg',
-  course: '/images/courses/course-default.jpg',
-  book: '/images/books/book-default.jpg',
-  avatar: '/images/testimonials/testimonial-default.jpg',
-  journal: '/images/articles/article-default.jpg',
+  hero: '',
+  about: '',
+  profile: '',
+  session: '',
+  course: '',
+  book: '',
+  avatar: '',
+  journal: '',
   brandBackground: '/images/brand/brand-background.jpg',
   brandPattern: '/images/brand/brand-pattern.jpg',
-  ogHome: '/images/social/og-home.jpg',
+  ogHome: '/images/brand/og-brand.jpg',
   ogCourses: '/images/social/og-courses.jpg',
   ogBooks: '/images/social/og-books.jpg',
   ogBooking: '/images/social/og-booking.jpg',

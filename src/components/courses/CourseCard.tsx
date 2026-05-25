@@ -15,8 +15,9 @@ function getCourseLevel(course: Course) {
 }
 
 export default function CourseCard({ course, featured = false, compact = false }: CourseCardProps) {
-  const rating = course.rating || 4.9
-  const studentsCount = course.studentsCount || 120
+  const hasLessonsCount = Number(course.lessonsCount || 0) > 0
+  const hasRating = typeof course.rating === 'number' && course.rating > 0
+  const hasStudentsCount = typeof course.studentsCount === 'number' && course.studentsCount > 0
 
   return (
     <Link
@@ -30,7 +31,7 @@ export default function CourseCard({ course, featured = false, compact = false }
           ratio="video"
           variant="course"
           label="صورة الكورس"
-          hint="غلاف بصري للكورس يمكن تغييره لاحقًا."
+          hint="غلاف بصري للكورس يمكن تغييره من لوحة الإدارة."
           showLabel={!course.coverImageUrl}
           className="rounded-b-none border-0 shadow-none"
         />
@@ -38,7 +39,7 @@ export default function CourseCard({ course, featured = false, compact = false }
         <div className="absolute inset-0 bg-gradient-to-t from-deep-teal/34 via-transparent to-transparent" />
 
         <div className="absolute right-4 top-4 flex flex-wrap gap-2">
-          {featured ? <PremiumBadge variant="burgundy">الأكثر طلبًا</PremiumBadge> : null}
+          {featured ? <PremiumBadge variant="gold">منشور</PremiumBadge> : null}
           {course.category ? <PremiumBadge variant="gold">{course.category}</PremiumBadge> : null}
         </div>
 
@@ -49,9 +50,10 @@ export default function CourseCard({ course, featured = false, compact = false }
 
       <div className={compact ? 'p-5' : 'p-6'}>
         <div className="mb-4 flex flex-wrap items-center gap-2 text-xs font-black text-warm-gray">
-          <span className="rounded-full bg-petrol/10 px-3 py-1 text-petrol">{course.lessonsCount || 0} درس</span>
-          <span className="rounded-full bg-gold/10 px-3 py-1 text-gold">{course.duration || 'مسار مرن'}</span>
-          <span className="rounded-full bg-cream px-3 py-1 text-warm-gray">★ {rating}</span>
+          {hasLessonsCount ? <span className="rounded-full bg-petrol/10 px-3 py-1 text-petrol">{course.lessonsCount} درس</span> : null}
+          {course.duration ? <span className="rounded-full bg-gold/10 px-3 py-1 text-gold">{course.duration}</span> : null}
+          {hasRating ? <span className="rounded-full bg-cream px-3 py-1 text-warm-gray">★ {course.rating}</span> : null}
+          {!hasLessonsCount && !course.duration && !hasRating ? <span className="rounded-full bg-cream px-3 py-1 text-warm-gray">تفاصيل الرحلة داخل الصفحة</span> : null}
         </div>
 
         <h3 className="text-xl font-black leading-snug text-charcoal transition group-hover:text-petrol dark:text-ivory">
@@ -68,10 +70,12 @@ export default function CourseCard({ course, featured = false, compact = false }
             <span className="text-lg font-black text-petrol">{formatEGP(course.price)}</span>
           </div>
 
-          <div className="text-left">
-            <span className="block text-[11px] font-black text-warm-gray">المنضمات</span>
-            <span className="text-xs font-black text-charcoal dark:text-ivory">+{studentsCount}</span>
-          </div>
+          {hasStudentsCount ? (
+            <div className="text-left">
+              <span className="block text-[11px] font-black text-warm-gray">المنضمات</span>
+              <span className="text-xs font-black text-charcoal dark:text-ivory">{course.studentsCount}</span>
+            </div>
+          ) : null}
         </div>
 
         <span className="mt-5 inline-flex w-full items-center justify-center rounded-full border border-petrol/20 bg-petrol/10 px-4 py-3 text-xs font-black text-petrol transition group-hover:bg-petrol group-hover:text-ivory">

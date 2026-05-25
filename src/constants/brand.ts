@@ -93,12 +93,12 @@ export const IMAGE_SLOT_KEYS = [
 ] as const
 
 export const BRAND_ASSET_REFERENCES = {
-  banner: '/images/brand/reference/heba-brand-banner.jpeg',
-  logoTagline: '/images/brand/reference/heba-logo-tagline.jpeg',
-  logoMeaning: '/images/brand/reference/heba-logo-meaning.jpeg',
-  brandBoard: '/images/brand/reference/heba-brand-board.png',
-  bookSilentBloom: '/images/brand/reference/book-silent-bloom.jpeg',
-  bookJourney: '/images/brand/reference/book-journey-awareness.jpeg',
+  banner: '/images/brand/og-brand.jpg',
+  logoTagline: '/images/brand/logo-official.jpeg',
+  logoMeaning: '/images/brand/logo-symbol.png',
+  brandBoard: '/images/brand/logo-navbar.png',
+  bookSilentBloom: '/images/books/book-default.jpg',
+  bookJourney: '/images/books/book-default.jpg',
 } as const
 
 export type ImageSlotKey = (typeof IMAGE_SLOT_KEYS)[number]

@@ -84,7 +84,7 @@ export const ADMIN_NAV_LINKS = [
   { href: '/admin/navigation', label: 'القوائم' },
   { href: '/admin/seo', label: 'SEO وGoogle' },
   { href: '/admin/feature-flags', label: 'المميزات' },
-  { href: '/admin/ai-guide', label: 'AI Guide' },
+  { href: '/admin/ai-guide', label: 'دليل البداية' },
   { href: '/admin/courses', label: 'الكورسات' },
   { href: '/admin/academy', label: 'استوديو التعلم' },
   { href: '/admin/books', label: 'الكتب' },
