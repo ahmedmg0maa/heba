@@ -109,7 +109,7 @@ export default function Footer() {
                       <SocialIcon type={social.key} />
                     </a>
                   ) : (
-                    <span key={social.key} className={`${classes} opacity-45`} aria-label={`${social.label} سيضاف لاحقًا`} title={`${social.label} سيضاف لاحقًا`}>
+                    <span key={social.key} className={`${classes} opacity-45`} aria-label={`${social.label} غير مفعّل حاليًا`} title={`${social.label} غير مفعّل حاليًا`}>
                       <SocialIcon type={social.key} />
                     </span>
                   )

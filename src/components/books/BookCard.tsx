@@ -13,7 +13,7 @@ export default function BookCard({ book, featured = false }: BookCardProps) {
   return (
     <Link
       href={`/books/${book.slug}`}
-      className="group premium-glow-border block overflow-hidden rounded-[2rem] border border-sand bg-ivory/90 shadow-soft backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:shadow-premium"
+      className="group premium-glow-border block overflow-hidden rounded-[2rem] border border-sand bg-ivory/90 shadow-soft backdrop-blur-sm transition duration-300 hover:-translate-y-1 hover:shadow-premium dark:bg-deep-teal/55"
     >
       <div className="relative p-3">
         <ImageSlot
@@ -22,7 +22,7 @@ export default function BookCard({ book, featured = false }: BookCardProps) {
           ratio="book"
           variant="book"
           label="غلاف الكتاب"
-          hint="أضيفي غلاف الكتاب الحقيقي من لوحة الإدارة."
+          hint="غلاف بصري للكتاب."
           className="rounded-[1.65rem] shadow-soft"
           showLabel={!book.coverImageUrl}
         />
@@ -53,7 +53,7 @@ export default function BookCard({ book, featured = false }: BookCardProps) {
         </p>
 
         <div className="mt-6 flex items-center justify-between gap-4 border-t border-sand pt-5">
-          <span className="text-lg font-black text-petrol">{formatEGP(book.price)}</span>
+          {Number(book.price) > 0 ? <span className="text-lg font-black text-petrol dark:text-gold">{formatEGP(book.price)}</span> : <span className="text-lg font-black text-petrol dark:text-gold">يُعلن عند الفتح</span>}
           <span className="rounded-full border border-petrol/20 bg-petrol/10 px-4 py-2 text-xs font-black text-petrol transition group-hover:bg-petrol group-hover:text-cream">
             تفاصيل الكتاب
           </span>

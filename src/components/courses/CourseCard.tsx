@@ -31,7 +31,7 @@ export default function CourseCard({ course, featured = false, compact = false }
           ratio="video"
           variant="course"
           label="صورة الكورس"
-          hint="غلاف بصري للكورس يمكن تغييره من لوحة الإدارة."
+          hint="غلاف بصري للمسار."
           showLabel={!course.coverImageUrl}
           className="rounded-b-none border-0 shadow-none"
         />
@@ -67,7 +67,7 @@ export default function CourseCard({ course, featured = false, compact = false }
         <div className="mt-6 flex items-center justify-between gap-4 border-t border-sand pt-5">
           <div>
             <span className="block text-[11px] font-black text-warm-gray">الاستثمار</span>
-            <span className="text-lg font-black text-petrol">{formatEGP(course.price)}</span>
+            {Number(course.price) > 0 ? <span className="text-lg font-black text-petrol dark:text-gold">{formatEGP(course.price)}</span> : <span className="text-lg font-black text-petrol dark:text-gold">يُعلن عند الفتح</span>}
           </div>
 
           {hasStudentsCount ? (

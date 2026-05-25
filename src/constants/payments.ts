@@ -26,6 +26,6 @@ export const PAYMENT_METHODS: {
     title: 'تحويل بنكي',
     description: 'مناسب للمدفوعات الأكبر أو من خارج المحافظ الإلكترونية.',
     accountLabel: 'بيانات التحويل',
-    accountValue: process.env.NEXT_PUBLIC_PAYMENT_BANK || 'تضاف بيانات التحويل البنكي لاحقًا',
+    accountValue: process.env.NEXT_PUBLIC_PAYMENT_BANK || 'يتم إرسال بيانات التحويل بعد مراجعة الطلب',
   },
 ]
