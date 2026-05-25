@@ -19,7 +19,6 @@ export default function NewCoursePage() {
     const courseRef = await addDoc(collection(db, 'courses'), {
       ...courseValues,
       lessonsCount: values.lessonsCount || lessons.length,
-      rating: 5,
       studentsCount: 0,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),

@@ -20,7 +20,6 @@ export default function NewBookPage() {
 
     await addDoc(collection(db, 'books'), {
       ...values,
-      rating: 5,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     })

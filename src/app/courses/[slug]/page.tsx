@@ -41,10 +41,10 @@ const courseFaq = [
 ]
 
 const trustItems = [
-  { title: 'دخول مدى الحياة', description: 'ارجعي للمحتوى وقتما تحتاجين.' },
-  { title: 'محتوى عالي الجودة', description: 'لغة هادئة، تطبيقات، وخطوات واضحة.' },
-  { title: 'شهادة إنجاز', description: 'بنية جاهزة لإصدار شهادة بعد الإكمال.' },
-  { title: 'دعم مباشر', description: 'يمكنكِ طلب جلسة خاصة إذا احتجتِ توجيهًا أعمق.' },
+  { title: 'وصول محمي', description: 'يفتح المحتوى بعد تأكيد الطلب من الإدارة.' },
+  { title: 'محتوى منظم', description: 'فصول ودروس تظهر عند إضافتها من لوحة الإدارة.' },
+  { title: 'متابعة داخل الحساب', description: 'يمكنكِ العودة للمحتوى من لوحة رحلتك.' },
+  { title: 'دعم عند الحاجة', description: 'يمكنكِ حجز جلسة خاصة لتوجيه أعمق.' },
 ]
 
 export default function CourseDetailsPage() {
@@ -179,14 +179,14 @@ export default function CourseDetailsPage() {
                   </h1>
 
                   <p className="mt-6 max-w-2xl text-lg font-bold leading-9 text-burgundy">
-                    {course.emotionalPromise || 'رحلة متكاملة تساعدك على فهم ذاتك وبناء علاقة أهدأ مع نفسك.'}
+                    {course.emotionalPromise || course.description}
                   </p>
 
                   <div className="mt-7 grid gap-3 sm:grid-cols-4">
-                    <HeroPill label="المدة" value={course.duration || 'مرنة'} />
-                    <HeroPill label="الدروس" value={`${course.lessonsCount || lessons.length} درس`} />
-                    <HeroPill label="التقييم" value={`★ ${course.rating || 4.9}`} />
-                    <HeroPill label="المنضمات" value={`+${course.studentsCount || 120}`} />
+                    {course.duration ? <HeroPill label="المدة" value={course.duration} /> : null}
+                    {course.lessonsCount || lessons.length ? <HeroPill label="الدروس" value={`${course.lessonsCount || lessons.length} درس`} /> : null}
+                    {course.rating ? <HeroPill label="التقييم" value={`★ ${course.rating}`} /> : null}
+                    {course.studentsCount ? <HeroPill label="المنضمات" value={`${course.studentsCount}`} /> : null}
                   </div>
 
                   <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
@@ -197,7 +197,7 @@ export default function CourseDetailsPage() {
                       paidRedirectHref={`/courses/${course.slug}/learn`}
                     />
                     <PremiumButton href={`/courses/${course.slug}/learn`} variant="outline">
-                      الدخول للمحتوى بعد الشراء
+                      الدخول بعد تأكيد الوصول
                     </PremiumButton>
                     <div className="sm:mr-auto text-right">
                       <span className="block text-xs font-black text-warm-gray">الاستثمار في الرحلة</span>

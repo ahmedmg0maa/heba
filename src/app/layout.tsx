@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/images/social/og-home.jpg',
+        url: '/images/brand/og-brand.jpg',
         width: 1200,
         height: 630,
         alt: 'هبة الشريف — رحلة وعي تعيدك إلى ذاتك',
@@ -39,7 +39,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'هبة الشريف — منصة التحوّل العاطفي',
     description: 'كورسات، كتب، وجلسات فردية في تجربة عربية فاخرة وهادئة.',
-    images: ['/images/social/og-home.jpg'],
+    images: ['/images/brand/og-brand.jpg'],
   },
   robots: { index: true, follow: true },
   manifest: '/site.webmanifest',

@@ -9,7 +9,6 @@ import CourseCard from '@/components/courses/CourseCard'
 import BrandDivider from '@/components/brand/BrandDivider'
 import BrandOrnament from '@/components/brand/BrandOrnament'
 import ImageSlot from '@/components/ui/ImageSlot'
-import { IMAGE_SLOTS } from '@/constants/content'
 import PremiumBadge from '@/components/ui/PremiumBadge'
 import PremiumButton from '@/components/ui/PremiumButton'
 import PremiumEmptyState from '@/components/ui/PremiumEmptyState'
@@ -125,8 +124,8 @@ export default function CoursesPage() {
               </p>
 
               <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <PremiumButton href={featuredCourse ? `/courses/${featuredCourse.slug}` : '#'} size="lg">
-                  ابدئي بأول مسار مناسب
+                <PremiumButton href={featuredCourse ? `/courses/${featuredCourse.slug}` : '/start-here'} size="lg">
+                  {featuredCourse ? 'ابدئي بأول مسار مناسب' : 'ابدئي من دليل البداية'}
                 </PremiumButton>
                 <PremiumButton href="/booking" variant="outline" size="lg">
                   أحتاج توجيهًا خاصًا
@@ -134,16 +133,16 @@ export default function CoursesPage() {
               </div>
 
               <div className="mt-9 grid max-w-3xl gap-3 sm:grid-cols-3">
-                <HeroMetric value="+120" label="دارسة بدأت رحلتها" />
-                <HeroMetric value="4.9/5" label="تقييم التجربة" />
-                <HeroMetric value="12+" label="مسار وفصل تعليمي" />
+                <HeroMetric value="محمي" label="يفتح المحتوى بعد تأكيد الطلب" />
+                <HeroMetric value="EGP" label="كل الأسعار بالجنيه المصري" />
+                <HeroMetric value="بدون وهميات" label="لا تظهر إلا الكورسات المنشورة" />
               </div>
             </div>
 
             <aside className="premium-glow-border rounded-[2.25rem] border border-sand bg-ivory/86 p-6 shadow-premium backdrop-blur-md dark:bg-deep-teal/60">
               <div className="flex items-center justify-between gap-4">
                 <div>
-                  <p className="text-sm font-black text-gold">دليل هبة الذكي</p>
+                  <p className="text-sm font-black text-gold">دليل البداية</p>
                   <h2 className="mt-2 text-2xl font-black text-petrol">مسار مقترح لكِ</h2>
                 </div>
                 <BrandOrnament className="scale-75" />
@@ -290,7 +289,6 @@ export default function CoursesPage() {
 
               <div className="overflow-hidden rounded-[2rem] border border-sand bg-petrol text-ivory shadow-premium">
                 <ImageSlot
-                  fallbackSrc={IMAGE_SLOTS.journal}
                   ratio="square"
                   variant="brand"
                   label="مساحة صورة ملهمة"
@@ -333,7 +331,6 @@ function FeaturedCourse({ course }: { course: Course }) {
       <div className="relative grid gap-6 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
         <ImageSlot
           src={course.heroImageUrl || course.coverImageUrl}
-          fallbackSrc={IMAGE_SLOTS.course}
           alt={course.title}
           ratio="video"
           variant="course"
@@ -351,9 +348,9 @@ function FeaturedCourse({ course }: { course: Course }) {
           </p>
 
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            <InfoPill label="الدروس" value={`${course.lessonsCount || 0} درس`} />
-            <InfoPill label="المدة" value={course.duration || 'مرنة'} />
-            <InfoPill label="التقييم" value={`★ ${course.rating || 4.9}`} />
+            {course.lessonsCount ? <InfoPill label="الدروس" value={`${course.lessonsCount} درس`} /> : null}
+            {course.duration ? <InfoPill label="المدة" value={course.duration} /> : null}
+            {course.rating ? <InfoPill label="التقييم" value={`★ ${course.rating}`} /> : null}
           </div>
 
           <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">

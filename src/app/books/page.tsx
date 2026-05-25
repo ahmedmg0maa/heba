@@ -8,7 +8,6 @@ import BookCard from '@/components/books/BookCard'
 import BrandDivider from '@/components/brand/BrandDivider'
 import BrandMark from '@/components/brand/BrandMark'
 import ImageSlot from '@/components/ui/ImageSlot'
-import { IMAGE_SLOTS } from '@/constants/content'
 import PremiumBadge from '@/components/ui/PremiumBadge'
 import PremiumButton from '@/components/ui/PremiumButton'
 import PremiumEmptyState from '@/components/ui/PremiumEmptyState'
@@ -123,7 +122,6 @@ export default function BooksPage() {
             <div className="relative">
               <ImageSlot
                 src={featuredBook?.coverImageUrl}
-                fallbackSrc={IMAGE_SLOTS.book}
                 ratio="book"
                 variant="book"
                 label="غلاف كتاب مميز"
@@ -192,7 +190,7 @@ export default function BooksPage() {
                 <p className="text-sm font-bold text-warm-gray">تم العثور على {filteredBooks.length} كتاب مناسب.</p>
                 <div className="flex flex-wrap gap-2">
                   <PremiumBadge variant="gold">وصول محمي</PremiumBadge>
-                  <PremiumBadge variant="olive">قراءة ذاتية</PremiumBadge>
+                  <PremiumBadge variant="olive">كتب منشورة فقط</PremiumBadge>
                 </div>
               </div>
 
@@ -218,7 +216,7 @@ export default function BooksPage() {
                 <p className="mini-label mb-3 text-gold">لا تعرفين من أين تبدأين؟</p>
                 <h2 className="text-3xl font-black md:text-4xl">اختاري الكتاب حسب المرحلة، لا حسب العنوان فقط.</h2>
                 <p className="mt-4 max-w-2xl text-sm leading-8 text-cream/75">
-                  لو كنتِ بين أكثر من كتاب، ابدئي بجلسة قصيرة أو استخدمي دليل هبة الذكي داخل الصفحة لتحديد المسار الأقرب لكِ.
+                  لو كنتِ بين أكثر من كتاب، ابدئي بجلسة قصيرة أو استخدمي دليل البداية داخل الصفحة لتحديد المسار الأقرب لكِ.
                 </p>
               </div>
               <PremiumButton href="/booking" variant="gold" className="w-full">احجزي جلسة ترشيح</PremiumButton>
