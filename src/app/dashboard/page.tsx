@@ -97,13 +97,13 @@ export default function DashboardHomePage() {
       const today = getTodayDateString()
 
       const stats: DashboardStats = {
-        paidCourses: orders.filter((order) => order.productType === 'course' && order.status === 'paid').length,
-        paidBooks: orders.filter((order) => order.productType === 'book' && order.status === 'paid').length,
+        paidCourses: orders.filter((order) => order.productType === 'course' && (order.status === 'paid' || order.status === 'access_granted')).length,
+        paidBooks: orders.filter((order) => order.productType === 'book' && (order.status === 'paid' || order.status === 'access_granted')).length,
         upcomingSessions: bookings.filter((booking) => booking.status !== 'cancelled' && booking.date >= today).length,
         pendingOrders: orders.filter((order) => order.status === 'pending' || order.status === 'payment_submitted').length,
-        paidOrders: orders.filter((order) => order.status === 'paid').length,
+        paidOrders: orders.filter((order) => order.status === 'paid' || order.status === 'access_granted').length,
         totalInvestment: orders
-          .filter((order) => order.status === 'paid')
+          .filter((order) => order.status === 'paid' || order.status === 'access_granted')
           .reduce((sum, order) => sum + Number(order.amount || 0), 0),
       }
 
@@ -161,7 +161,7 @@ export default function DashboardHomePage() {
               <div className="mb-6 flex flex-wrap items-center gap-3">
                 <BrandMark size="md" />
                 <PremiumBadge variant="gold">لوحة رحلتك الخاصة</PremiumBadge>
-                <PremiumBadge variant="aqua">تصميم V2</PremiumBadge>
+                <PremiumBadge variant="aqua">رحلة شخصية</PremiumBadge>
               </div>
 
               <p className="mini-label mb-3">مساحة هادئة لتنظيم الوعي</p>
@@ -299,7 +299,7 @@ export default function DashboardHomePage() {
             </Panel>
           </div>
 
-          <section className="premium-glow-border overflow-hidden rounded-[2.25rem] border border-sand bg-petrol p-6 text-ivory shadow-premium lg:p-7">
+          <section className="premium-glow-border overflow-hidden rounded-[2.25rem] border border-sand bg-petrol on-dark p-6 text-ivory shadow-premium lg:p-7">
             <div className="grid gap-6 lg:grid-cols-[1fr_270px] lg:items-center">
               <div>
                 <p className="text-xs font-black tracking-[.22em] text-gold">لحظة مراجعة</p>
@@ -338,7 +338,7 @@ export default function DashboardHomePage() {
             </div>
           </div>
 
-          <div className="premium-glow-border rounded-[2.25rem] border border-sand bg-petrol p-6 text-ivory shadow-premium">
+          <div className="premium-glow-border rounded-[2.25rem] border border-sand bg-petrol on-dark p-6 text-ivory shadow-premium">
             <p className="text-xs font-black tracking-[.22em] text-gold">ملخص الاستثمار</p>
             <strong className="mt-4 block text-4xl font-black latin-numerals">{formatEGP(data.stats.totalInvestment)}</strong>
             <p className="mt-3 text-sm leading-7 text-ivory/72">
